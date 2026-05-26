@@ -85,7 +85,7 @@ try:
             top_10 = leaderboard.head(10).copy()
             
             # 2. Force the data to be sorted explicitly by Total Points for the chart
-            top_10_sorted = top_10.sort_values(by="Total Points", ascending=True)
+            top_10_sorted = top_10.sort_values(by="Total Points", ascending=False)
             
             # 3. Set the index on the already-sorted data frame
             chart_data = top_10_sorted.set_index("Player Name")[["Total Points"]]
