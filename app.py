@@ -105,7 +105,7 @@ try:
         df_history = pd.DataFrame(parsed_history_records)
         
         # -----------------------------------------------------------------
-        # DYNAMIC HIGHLIGHT & STATISTICS ENGINE
+        # PODIUM & STATISTICS AGGREGATION ENGINE
         # -----------------------------------------------------------------
         unique_dates_sorted = sorted(df_history["Date"].unique())
         last_game_date = unique_dates_sorted[-1] if unique_dates_sorted else None
@@ -116,23 +116,32 @@ try:
         else:
             df_last_game = pd.DataFrame(columns=["Player Name", "Last Game Points"])
 
-        # Calculate Final Table Appearance counts (Position <= 6)
-        df_history["Is_Final_Table"] = df_history["Position"].apply(lambda x: 1 if x <= 6 else 0)
+        # Track finishes
+        df_history["🥇 1st"] = df_history["Position"].apply(lambda x: 1 if x == 1 else 0)
+        df_history["🥈 2nd"] = df_history["Position"].apply(lambda x: 1 if x == 2 else 0)
+        df_history["🥉 3rd"] = df_history["Position"].apply(lambda x: 1 if x == 3 else 0)
+        df_history["FT"] = df_history["Position"].apply(lambda x: 1 if x <= 6 else 0)
         
         leaderboard = df_history.groupby("Player Name").agg(
             Total_Points=("Points", "sum"),
             Games_Played=("Date", "count"),
-            Final_Tables=("Is_Final_Table", "sum")
+            Wins=("🥇 1st", "sum"),
+            Seconds=("🥈 2nd", "sum"),
+            Thirds=("🥉 3rd", "sum"),
+            Final_Tables=("FT", "sum")
         ).reset_index()
+        
+        # Calculate Average Points Per Game for the Bubble Chart
+        leaderboard["Avg Points/Game"] = (leaderboard["Total_Points"] / leaderboard["Games_Played"]).round(1)
         
         leaderboard = pd.merge(leaderboard, df_last_game, on="Player Name", how="left")
         leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).astype(int)
-        leaderboard.columns = ["Player Name", "Total Points", "Games Played", "Final Tables", "Last Game Points"]
         
+        leaderboard.columns = ["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"]
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         
         # -----------------------------------------------------------------
-        # SPICED-UP METRICS SHELF (Top Highlights)
+        # MILESTONES CARD SHELF
         # -----------------------------------------------------------------
         if not base_sorted_leaderboard.empty:
             st.markdown("### 👑 Season Milestones")
@@ -142,19 +151,19 @@ try:
             max_games = base_sorted_leaderboard["Games Played"].max()
             attendance_kings = base_sorted_leaderboard[base_sorted_leaderboard["Games Played"] == max_games]["Player Name"].tolist()
             
-            # Find the final table boss
-            ft_sorted = leaderboard.sort_values(by="Final Tables", ascending=False)
-            ft_boss = ft_sorted.iloc[0]["Player Name"] if not ft_sorted.empty else "N/A"
-            ft_count = ft_sorted.iloc[0]["Final Tables"] if not ft_sorted.empty else 0
+            # Find Title Champion
+            win_sorted = leaderboard.sort_values(by="🥇 1st", ascending=False)
+            win_boss = win_sorted.iloc[0]["Player Name"] if not win_sorted.empty else "N/A"
+            win_count = win_sorted.iloc[0]["🥇 1st"] if not win_sorted.empty else 0
             
             with m_col1:
                 st.metric("League Leader 🥇", current_leader, f"{base_sorted_leaderboard.iloc[0]['Total Points']} pts")
             with m_col2:
                 st.metric("Max Attendance 🏃‍♂️", attendance_kings[0] if attendance_kings else "N/A", f"{max_games} games")
             with m_col3:
-                st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
+                st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
         
-        # Cache placeholder state rules (Defaults to Highest First)
+        # Cache state values
         search_player_placeholder = "-- View All --"
         if "search_player_value" in st.session_state:
             search_player_placeholder = st.session_state["search_player_value"]
@@ -165,11 +174,10 @@ try:
         st.markdown("---")
         st.subheader("📋 Overall Season Rankings")
         
-        # Default Sorting: Always Total Points descending
         display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         display_leaderboard.index = display_leaderboard.index + 1
         
-        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "Final Tables"]]
+        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"]]
 
         def highlight_top_scores(val):
             return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
@@ -178,7 +186,7 @@ try:
         st.dataframe(styled_df, use_container_width=True)
         
         # -----------------------------------------------------------------
-        # ⚙️ DASHBOARD CONTROLS (Sort drop-down removed)
+        # ⚙️ DASHBOARD CONTROLS
         # -----------------------------------------------------------------
         st.markdown("---")
         st.markdown("### ⚙️ Dashboard Controls")
@@ -194,7 +202,7 @@ try:
             st.rerun()
 
         # -----------------------------------------------------------------
-        # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT / ALL GAME LOGS
+        # 🔍 INDIVIDUAL LOG REPORTS
         # -----------------------------------------------------------------
         if search_player_placeholder != "-- View All --":
             st.markdown(f"#### 📖 Individual Performance Ledger")
@@ -236,10 +244,14 @@ try:
             color=alt.Color("Player Name:N", title="Players"),
             tooltip=["Date", "Player Name", "Position"]
         ).properties(height=320).interactive()
-        st.altair_chart(position_line_chart, use_container_width=True)
+        
+        with st.container():
+            st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+            st.altair_chart(position_line_chart, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
         # -----------------------------------------------------------------
-        # 📈 VISUAL BAR CHART (Absolute Bottom of Page)
+        # 📈 VISUAL BAR CHART
         # -----------------------------------------------------------------
         st.markdown("---")
         st.subheader("📈 Top 10 Performance Standings (Points)")
@@ -249,7 +261,31 @@ try:
             color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
             tooltip=["Player Name", "Total Points"]
         ).properties(height=260)
-        st.altair_chart(points_chart, use_container_width=True)
+        
+        with st.container():
+            st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+            st.altair_chart(points_chart, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # -----------------------------------------------------------------
+        # 🔮 NEW 🔥: LEAGUE ARCHETYPES BUBBLE CHART (Absolute Bottom)
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("🔮 League Activity vs Efficiency Matrix")
+        st.markdown("*Bubble Size represents **Average Points Per Game**. Sharks stay high up on small game samples; Grinders stack points over max attendance.*")
+        
+        bubble_chart = alt.Chart(leaderboard).mark_circle().encode(
+            x=alt.X("Games Played:Q", title="Total Attendance (Games)", axis=alt.Axis(tickMinStep=1)),
+            y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
+            size=alt.Size("Avg Points/Game:Q", title="Efficiency (Pts/Game)", scale=alt.Scale(range=[100, 1000])),
+            color=alt.Color("Player Name:N", title="Player", legend=None),
+            tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
+        ).properties(height=340).interactive()
+        
+        with st.container():
+            st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+            st.altair_chart(bubble_chart, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Could not load league data: {e}")
