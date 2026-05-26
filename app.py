@@ -11,7 +11,7 @@ st.title("🏆 Dirty Town Poker League Leaderboard")
 # =========================================================================
 # 🎨 CUSTOM BACKGROUND IMAGE (Online URL)
 # =========================================================================
-background_image_url = "https://imgur.com/dogs-playing-poker-1600x1200-e84s6AY"
+background_image_url = "https://i.imgur.com/e84s6AY.jpeg"
 
 st.markdown(
     f"""
