@@ -155,11 +155,7 @@ try:
                 st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
         
         # Cache placeholder state rules
-        sort_by_placeholder = "Total Points (Highest First)"
         search_player_placeholder = "-- View All --"
-        
-        if "sort_by_value" in st.session_state:
-            sort_by_placeholder = st.session_state["sort_by_value"]
         if "search_player_value" in st.session_state:
             search_player_placeholder = st.session_state["search_player_value"]
 
