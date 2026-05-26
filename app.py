@@ -159,7 +159,7 @@ try:
             with m_col2:
                 st.metric("Max Attendance 🏃‍♂️", attendance_kings[0] if attendance_kings else "N/A", f"{max_games} games")
             with m_col3:
-                st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
+                st.metric("1st Place Wins 🏆", win_boss, f"{win_count} Wins")
         
         search_player_placeholder = "-- View All --"
         if "search_player_value" in st.session_state:
