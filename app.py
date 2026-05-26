@@ -9,16 +9,14 @@ st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layou
 st.title("🏆 Dirty Town Poker League Leaderboard")
 
 def get_cloud_history_data():
-    """Connects to Google Sheets and pulls the pre-calculated history."""
+    """Connects to Google Sheets and pulls pre-calculated history."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
-    # Check if we are running locally or on the cloud server
+    # Check if we are running locally or on the Streamlit cloud server
     if "gcp_service_account" in st.secrets:
-        # Online Server Mode
         google_secrets = dict(st.secrets["gcp_service_account"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(google_secrets, scope)
     else:
-        # Local Desktop Fallback Mode
         if not os.path.exists("credentials.json"):
             st.error("Missing credentials verification file!")
             st.stop()
@@ -41,29 +39,28 @@ try:
         if "Points" not in df_history.columns:
             st.error("⚠️ The 'Points' column header is missing in your Google Sheet tab.")
         else:
+            # Safely parse numeric scores
             df_history["Points"] = pd.to_numeric(df_history["Points"], errors="coerce").fillna(0).astype(int)
             
-            # Group data to build aggregate totals
+            # 1. Calculate Aggregate Standings
             leaderboard = df_history.groupby("Player Name").agg(
                 Total_Points=("Points", "sum"),
                 Games_Played=("Date", "count")
             ).reset_index()
-            
-            # Format display columns
             leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
             
             # -----------------------------------------------------------------
-            # 🔄 NEW INTERACTIVE SORTING INTERFACE
+            # 📊 SIDEBAR CONFIGURATIONS (Sorting & Personal Reports)
             # -----------------------------------------------------------------
             st.sidebar.header("📊 Dashboard Settings")
             
-            # Dropdown menu to select what metric to sort by
+            # Sort selector
             sort_by = st.sidebar.selectbox(
                 "Sort Leaderboard By:",
                 options=["Total Points (Highest First)", "Games Played (Most Active)", "Player Name (A-Z)"]
             )
             
-            # Apply sorting logic based on selection
+            # Apply Sorting
             if sort_by == "Total Points (Highest First)":
                 leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
             elif sort_by == "Games Played (Most Active)":
@@ -71,20 +68,61 @@ try:
             elif sort_by == "Player Name (A-Z)":
                 leaderboard = leaderboard.sort_values(by="Player Name", ascending=True).reset_index(drop=True)
             
-            # Re-align index ranks so the display order is clear
             leaderboard.index = leaderboard.index + 1
             
+            # 🕵️‍♂️ Individual Player Lookup Section
+            st.sidebar.markdown("---")
+            st.sidebar.header("🔎 Player Report Search")
+            all_unique_players = sorted(df_history["Player Name"].unique())
+            search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
+            
             # -----------------------------------------------------------------
-            # Render Leaderboard Display Table
+            # 📈 CHARTS SECTION (Displays Top 10 by default)
+            # -----------------------------------------------------------------
+            st.subheader("📈 Top 10 Performance Standings")
+            # Grab top 10 point earners for a clean, non-cluttered bar chart
+            top_10 = leaderboard.sort_values(by="Total Points", ascending=False).head(10)
+            
+            # Set the name as the index so Streamlit labels the graph columns correctly
+            chart_data = top_10.set_index("Player Name")[["Total Points"]]
+            st.bar_chart(chart_data)
+            
+            # -----------------------------------------------------------------
+            # 🏆 MAIN LEADERBOARD DISPLAY
+            # -----------------------------------------------------------------
+            st.subheader("📋 Overall Season Rankings")
             st.dataframe(leaderboard, use_container_width=True)
             
-            # Historical expander view below
-            with st.expander("🔍 View Game-by-Game History Log"):
-                if "Position" in df_history.columns:
-                    sorted_log = df_history.sort_values(by=["Date", "Position"], ascending=[False, True])
-                else:
-                    sorted_log = df_history.sort_values(by="Date", ascending=False)
-                st.dataframe(sorted_log, use_container_width=True, hide_index=True)
+            # -----------------------------------------------------------------
+            # 🔍 GAME LOGS & SEARCH RESULTS SECTION
+            # -----------------------------------------------------------------
+            if search_player != "-- View All --":
+                st.markdown(f"---")
+                st.subheader(f"📖 Individual Report: {search_player}")
+                
+                # Filter down to just this player's matches
+                player_df = df_history[df_history["Player Name"] == search_player].copy()
+                
+                # Quick overview numbers for the player
+                col1, col2 = st.columns(2)
+                col1.metric("Total Points Earned", int(player_df["Points"].sum()))
+                col2.metric("Total Games Tracked", int(player_df["Date"].count()))
+                
+                # Show their placements log
+                st.markdown("**Detailed Game Placements Ledger:**")
+                st.dataframe(
+                    player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], 
+                    use_container_width=True, 
+                    hide_index=True
+                )
+            else:
+                # Default view showing the general game history bucket
+                with st.expander("🔍 View All Game-by-Game History Logs"):
+                    if "Position" in df_history.columns:
+                        sorted_log = df_history.sort_values(by=["Date", "Position"], ascending=[False, True])
+                    else:
+                        sorted_log = df_history.sort_values(by="Date", ascending=False)
+                    st.dataframe(sorted_log, use_container_width=True, hide_index=True)
 
 except Exception as e:
     st.error(f"Could not load league data: {e}")
