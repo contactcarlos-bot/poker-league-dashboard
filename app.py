@@ -300,6 +300,11 @@ try:
             st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
             st.altair_chart(bubble_chart, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
+        # -----------------------------------------------------------------
+        # 🛡️ LEAGUE INFO FOOTER 
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.info("📋 **League Notice:** For schedule changes, blind structure adjustments, or dispute resolution, please contact your League Commissioner: **Miguel Craft**.")
 
 except Exception as e:
     st.error(f"Could not load league data: {e}")
