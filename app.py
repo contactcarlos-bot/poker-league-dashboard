@@ -110,7 +110,7 @@ try:
             Total_Points=("Points", "sum"), Games_Played=("Date", "count")
         ).reset_index()
         leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
-        base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
+        base_sorted_leaderboard = leaderboard.sort_values(by="Total_Points", ascending=False).reset_index(drop=True)
         
         # -----------------------------------------------------------------
         # 📊 RENDER SIDEBAR LOOKUPS & INTERACTIVE CONTROLS
