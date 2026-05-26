@@ -77,24 +77,66 @@ try:
             search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
             
            # -----------------------------------------------------------------
-            # 📈 CHARTS SECTION (Displays Top 10 by default)
+            # 📈 CHARTS SECTION
             # -----------------------------------------------------------------
-            st.subheader("📈 Top 10 Performance Standings")
+            st.subheader("📈 Top 10 Performance Standings (Points)")
             
-            # Grab the top 10 point earners directly from our already-sorted table
-            top_10 = leaderboard.head(10).copy()
+            # Grab top 10 point earners from our base point list
+            top_10 = base_sorted_leaderboard.head(10).copy()
             
-            # Create a professional Plotly Bar Chart that hard-locks the sort order
-            import plotly.express as px
+            import altair as alt
             
-            fig = px.bar(
-                top_10,
-                x="Player Name",
-                y="Total Points",
-                text="Total Points",  # Puts the exact score number right on top of each bar
-                color="Total Points", # Adds a beautiful color gradient (darker = more points)
-                color_continuous_scale="Viridis" 
-            )
+            # Points Bar Chart
+            points_chart = alt.Chart(top_10).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+                x=alt.X("Player Name:N", sort="-y", title="Player Name", axis=alt.Axis(labelAngle=-45)),
+                y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
+                color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
+                tooltip=["Player Name", "Total Points"]
+            ).properties(height=300)
+            
+            st.altair_chart(points_chart, use_container_width=True)
+            
+            # -----------------------------------------------------------------
+            # 📉 NEW: WEEKLY POSITION TRACKER LINE GRAPH
+            # -----------------------------------------------------------------
+            st.markdown("---")
+            st.subheader("📉 Weekly Finishing Position History")
+            st.markdown("*Track how players fluctuate in placement week by week. Higher lines mean closer to 1st place!*")
+            
+            # Ensure we have data to plot and columns are formatted cleanly
+            if "Date" in df_history.columns and "Position" in df_history.columns:
+                
+                # Create a clean pivot table: Weeks as rows, Players as columns, Placements as values
+                # We sort the dates chronologically so the timeline moves left-to-right properly
+                df_sorted_dates = df_history.sort_values(by="Date")
+                
+                # Filter down to the Top 10 or Top 15 players to keep the line graph readable
+                top_players_list = list(base_sorted_leaderboard.head(10)["Player Name"])
+                df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"].isin(top_players_list)]
+                
+                pivot_df = df_filtered_tracked.pivot_table(
+                    index="Date", 
+                    columns="Player Name", 
+                    values="Position",
+                    aggfunc="first"
+                )
+                
+                # Convert the pivot table into a format Altair easily reads
+                line_data = pivot_df.reset_index().melt("Date", var_name="Player Name", value_name="Position")
+                
+                # Drop rows where a player skipped a week so lines don't plummet to zero artificially
+                line_data = line_data.dropna()
+                
+                # Build an interactive line chart with an inverted Y-axis (1st place at the top)
+                position_line_chart = alt.Chart(line_data).mark_line(point=True).encode(
+                    x=alt.X("Date:N", title="Game Date"),
+                    # sort="descending" forces 1st place to stay at the absolute top of the graph instead of the bottom
+                    y=alt.Y("Position:Q", title="Finishing Place", sort="descending", scale=alt.Scale(domain=[1, df_history["Position"].max()])),
+                    color=alt.Color("Player Name:N", title="Players"),
+                    tooltip=["Date", "Player Name", "Position"]
+                ).properties(height=400).interactive()
+                
+                st.altair_chart(position_line_chart, use_container_width=True)
             
             
             # CRITICAL LINE: Forces Plotly to respect our exact dataframe sorting layout (1st place to 10th place)
