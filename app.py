@@ -32,7 +32,8 @@ def calculate_poker_points(total_players, rank):
     buy_ins = int(total_players)
     rank = int(rank)
     LEAGUE_MATRIX = {
-        6:  [371, 226, 156, 121, 110, 100], 7:  [460, 282, 195, 143, 119, 110, 100], 8:  [558, 343, 240, 174, 135, 118, 110, 100], 9:  [664, 410, 290, 213, 160, 132, 118, 110, 100],
+        6:  [371, 226, 156, 121, 110, 100], 7:  [460, 282, 195, 143, 119, 110, 100], 
+        8:  [558, 343, 240, 174, 135, 118, 110, 100], 9:  [664, 410, 290, 213, 160, 132, 118, 110, 100],
         10: [777, 483, 344, 256, 193, 151, 129, 119, 111, 100], 11: [897, 560, 402, 303, 231, 178, 146, 128, 119, 111, 100],
         12: [1020, 642, 465, 353, 273, 212, 168, 142, 128, 119, 111, 100], 13: [1146, 728, 531, 406, 318, 249, 197, 161, 140, 128, 120, 111, 100],
         14: [1272, 820, 601, 463, 365, 290, 230, 185, 156, 138, 128, 120, 111, 100], 15: [1398, 915, 674, 524, 416, 334, 268, 215, 177, 153, 137, 128, 120, 111, 100],
@@ -74,26 +75,33 @@ try:
             raw_standings_text = row[2] if len(row) >= 3 else row[1]
             
             raw_list = [line.strip() for line in str(raw_standings_text).split('\n') if line.strip()]
-            
-            # Simple fallback to parse historical sheets vs fresh mobile forms
-            if "-" in game_date and game_date.split("-")[-1] == "2026":
+            if not raw_list:
+                continue
+                
+            # FIX: Robustly differentiate raw date formatting
+            if "-" in game_date and len(game_date.split("-")[0]) == 4:
                 is_historical = True
             else:
                 is_historical = False
                 
-            if not is_historical:
-                raw_list.reverse()
-                
             total_players = len(raw_list)
             for index, raw_player_input in enumerate(raw_list):
-                position = index + 1
+                # FIX: Handle Elimination Order vs Backlog Order precisely
+                if is_historical:
+                    position = index + 1
+                else:
+                    position = total_players - index
+                    
                 points = calculate_poker_points(total_players, position)
                 
                 lookup_key = raw_player_input.strip().lower()
                 player_name = PLAYER_REGISTRY.get(lookup_key, raw_player_input.strip().title())
                 
                 parsed_history_records.append({
-                    "Date": game_date, "Player Name": player_name, "Position": int(position), "Points": int(points)
+                    "Date": game_date.split()[0], # FIX: Discard timestamps to protect grouping metrics
+                    "Player Name": player_name, 
+                    "Position": int(position), 
+                    "Points": int(points)
                 })
         
         df_history = pd.DataFrame(parsed_history_records)
@@ -123,31 +131,8 @@ try:
         all_unique_players = sorted(df_history["Player Name"].unique())
         search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
         
-
         # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        st.dataframe(leaderboard, use_container_width=True)
-        
-        # -----------------------------------------------------------------
-        # 🔍 DETAILED HISTORICAL LOGS
-        # -----------------------------------------------------------------
-        if search_player != "-- View All --":
-            st.markdown("---")
-            st.subheader(f"📖 Individual Report: {search_player}")
-            player_df = df_history[df_history["Player Name"] == search_player].copy()
-            col1, col2 = st.columns(2)
-            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
-            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
-            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
-        else:
-            with st.expander("🔍 View All Game-by-Game History Logs"):
-                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
-
-        # -----------------------------------------------------------------
-        # 📈 BAR CHART
+        # 📈 VISUAL CHARTS (Moved to top for premium placement layout)
         # -----------------------------------------------------------------
         st.subheader("📈 Top 10 Performance Standings (Points)")
         import altair as alt
@@ -159,9 +144,6 @@ try:
         ).properties(height=260)
         st.altair_chart(points_chart, use_container_width=True)
         
-        # -----------------------------------------------------------------
-        # 📉 LINE GRAPH
-        # -----------------------------------------------------------------
         st.markdown("---")
         st.subheader("📉 Weekly Finishing Position History")
         df_sorted_dates = df_history.sort_values(by="Date")
@@ -184,5 +166,27 @@ try:
         ).properties(height=320).interactive()
         st.altair_chart(position_line_chart, use_container_width=True)
         
+        # -----------------------------------------------------------------
+        # 🏆 SEASON STANDINGS LEADERBOARD
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("📋 Overall Season Rankings")
+        st.dataframe(leaderboard, use_container_width=True)
+        
+        # -----------------------------------------------------------------
+        # 🔍 DETAILED HISTORICAL LOGS / SEARCH REPORTS
+        # -----------------------------------------------------------------
+        if search_player != "-- View All --":
+            st.markdown("---")
+            st.subheader(f"📖 Individual Report: {search_player}")
+            player_df = df_history[df_history["Player Name"] == search_player].copy()
+            col1, col2 = st.columns(2)
+            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
+            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
+            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
+        else:
+            with st.expander("🔍 View All Game-by-Game History Logs"):
+                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
+
 except Exception as e:
     st.error(f"Could not load league data: {e}")
