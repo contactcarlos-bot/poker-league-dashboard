@@ -230,6 +230,37 @@ try:
                 st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], use_container_width=True, hide_index=True)
 
         # -----------------------------------------------------------------
+        # 🃏 SATELLITE GAME QUALIFIED PLAYERS
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("🃏 Satellite Game Qualified Players")
+        st.markdown("*Players with **8 or more games played** who are currently ranked **10th place or lower (10th, 11th, etc.)**.*")
+
+        # Create a copy of the overall sorted rankings to check exact placements
+        df_sat_check = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
+        # Shift index to start at 1 to match official ranking positions
+        df_sat_check.index = df_sat_check.index + 1 
+        
+        # Filter: Games Played >= 8 AND Rank (Index) >= 11 (Targets 11th, 12th, etc.)
+        df_satellite_qualified = df_sat_check[
+            (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 10)
+        ].copy()
+        
+        # Insert the Rank as a clean visible column for the players
+        df_satellite_qualified["Current Rank"] = df_satellite_qualified.index
+        
+        # Clean up columns to show only what matters for qualification
+        sat_display_df = df_satellite_qualified[["Current Rank", "Player Name", "Games Played", "Total Points"]]
+        
+        if sat_display_df.empty:
+            st.info("No players currently meet the qualification criteria for the Satellite Game.")
+        else:
+            with st.container():
+                st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+                st.dataframe(sat_display_df, use_container_width=True, hide_index=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+        # -----------------------------------------------------------------
         # 📉 WEEKLY POSITION TRACKER LINE GRAPH 
         # -----------------------------------------------------------------
         st.markdown("---")
