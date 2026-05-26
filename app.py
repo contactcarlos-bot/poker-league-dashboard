@@ -105,7 +105,7 @@ try:
         df_history = pd.DataFrame(parsed_history_records)
         
         # -----------------------------------------------------------------
-        # DYNAMIC 'LAST GAME' ENGINE
+        # DYNAMIC HIGHLIGHT & STATISTICS ENGINE
         # -----------------------------------------------------------------
         unique_dates_sorted = sorted(df_history["Date"].unique())
         last_game_date = unique_dates_sorted[-1] if unique_dates_sorted else None
@@ -122,29 +122,45 @@ try:
         
         leaderboard = pd.merge(leaderboard, df_last_game, on="Player Name", how="left")
         leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).astype(int)
-        
         leaderboard.columns = ["Player Name", "Total Points", "Games Played", "Last Game Points"]
+        
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         
-        # We define a placeholder rendering state first so widget triggers don't crash the script flow
+        # -----------------------------------------------------------------
+        # NEW 🔥: SPICED-UP METRICS SHELF (Top Highlights)
+        # -----------------------------------------------------------------
+        if not base_sorted_leaderboard.empty:
+            st.markdown("### 👑 Season Milestones")
+            m_col1, m_col2, m_col3 = st.columns(3)
+            
+            # Find insights dynamically
+            current_leader = base_sorted_leaderboard.iloc[0]["Player Name"]
+            max_games = base_sorted_leaderboard["Games Played"].max()
+            attendance_kings = base_sorted_leaderboard[base_sorted_leaderboard["Games Played"] == max_games]["Player Name"].tolist()
+            top_single_score_row = df_history.loc[df_history["Points"].idxmax()]
+            
+            with m_col1:
+                st.metric("League Leader 🥇", current_leader, f"{base_sorted_leaderboard.iloc[0]['Total Points']} pts")
+            with m_col2:
+                st.metric("Max Attendance 🏃‍♂️", attendance_kings[0] if attendance_kings else "N/A", f"{max_games} games")
+            with m_col3:
+                st.metric("Record Heater 🔥", top_single_score_row["Player Name"], f"{top_single_score_row['Points']} pts")
+        
+        # Session cache setup for controls
         sort_by_placeholder = "Total Points (Highest First)"
         search_player_placeholder = "-- View All --"
         
-        # -----------------------------------------------------------------
-        # INTERNAL LOGIC INJECTION PRE-RENDER SCRIPTING
-        # -----------------------------------------------------------------
-        # Check URL parameters or cache states quietly to execute calculations before table splits
         if "sort_by_value" in st.session_state:
             sort_by_placeholder = st.session_state["sort_by_value"]
         if "search_player_value" in st.session_state:
             search_player_placeholder = st.session_state["search_player_value"]
 
         # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD (Top of Page)
+        # 🏆 SEASON STANDINGS LEADERBOARD
         # -----------------------------------------------------------------
+        st.markdown("---")
         st.subheader("📋 Overall Season Rankings")
         
-        # Dynamic processing check to adjust main scoreboard state immediately on interaction
         display_leaderboard = leaderboard.copy()
         if sort_by_placeholder == "Total Points (Highest First)":
             display_leaderboard = display_leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
@@ -156,7 +172,15 @@ try:
             display_leaderboard = display_leaderboard.sort_values(by="Player Name", ascending=True).reset_index(drop=True)
         display_leaderboard.index = display_leaderboard.index + 1
         
-        st.dataframe(display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
+        # Format columns layout view array clean
+        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]]
+
+        # NEW 🔥: Add color formatting stylers to make winners stand out
+        def highlight_top_scores(val):
+            return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
+
+        styled_df = final_table_df.style.map(highlight_top_scores, subset=["Last Game Points"])
+        st.dataframe(styled_df, use_container_width=True)
         
         # -----------------------------------------------------------------
         # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT / ALL GAME LOGS
