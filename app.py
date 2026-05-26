@@ -9,6 +9,12 @@ st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layou
 st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
 
 # =========================================================================
+# 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
+# =========================================================================
+st.error("🚨 **IMPORTANT NOTICE:** You must have **8 or more games played** to qualify for the upcoming Satellite Game! Check the qualified roster section at the bottom of the page to see your current eligibility status. Satellite Game (Saturday, May 30, 2026 at 4:00pm.")
+st.error("🚨 **IMPORTANT NOTICE:** Tournament of Champions Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
+
+# =========================================================================
 # CLOUD CONFIGURATION & PLAYER REGISTRY
 # =========================================================================
 PLAYER_REGISTRY = {
