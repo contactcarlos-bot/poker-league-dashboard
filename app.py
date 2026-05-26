@@ -142,9 +142,12 @@ try:
         # -----------------------------------------------------------------
         # MILESTONES CARD SHELF
         # -----------------------------------------------------------------
+        # -----------------------------------------------------------------
+        # SPICED-UP METRICS SHELF (Upgraded to 4 Columns)
+        # -----------------------------------------------------------------
         if not base_sorted_leaderboard.empty:
-            st.markdown("### 👑 Season Milestones")
-            m_col1, m_col2, m_col3 = st.columns(3)
+            st.markdown("### 👑 Season Milestones & Management")
+            m_col1, m_col2, m_col3, m_col4 = st.columns(4)
             
             current_leader = base_sorted_leaderboard.iloc[0]["Player Name"]
             max_games = base_sorted_leaderboard["Games Played"].max()
@@ -159,8 +162,10 @@ try:
             with m_col2:
                 st.metric("Max Attendance 🏃‍♂️", attendance_kings[0] if attendance_kings else "N/A", f"{max_games} games")
             with m_col3:
-                st.metric("1st Place Wins 🏆", win_boss, f"{win_count} Wins")
-        
+                st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
+            with m_col4:
+                st.metric("Commissioner 👑", "Michael Craft", "League Admin")
+                
         search_player_placeholder = "-- View All --"
         if "search_player_value" in st.session_state:
             search_player_placeholder = st.session_state["search_player_value"]
