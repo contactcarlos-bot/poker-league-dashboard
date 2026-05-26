@@ -268,4 +268,33 @@ try:
             st.markdown('</div>', unsafe_allow_html=True)
 
         # -----------------------------------------------------------------
-        # 🔮 LEAGUE ARCHETYPES BUBBLE CHART (Edge
+        # 🔮 LEAGUE ARCHETYPES BUBBLE CHART (Edge Clipping Fixed)
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("🔮 League Activity vs Efficiency Matrix")
+        st.markdown("*Bubble Size represents **Average Points Per Game**. Sharks stay high up on small game samples; Grinders stack points over max attendance.*")
+        
+        # FIX: Padding limits added to the domain ranges prevents circle clipping on axes borders
+        min_games, max_games_track = int(leaderboard["Games Played"].min()), int(leaderboard["Games Played"].max())
+        min_pts, max_pts_track = int(leaderboard["Total Points"].min()), int(leaderboard["Total Points"].max())
+
+        bubble_chart = alt.Chart(leaderboard).mark_circle().encode(
+            x=alt.X("Games Played:Q", 
+                    title="Total Attendance (Games)", 
+                    scale=alt.Scale(domain=[max(0, min_games - 1), max_games_track + 1]),
+                    axis=alt.Axis(tickMinStep=1)),
+            y=alt.Y("Total Points:Q", 
+                    title="Total Points Accumulated",
+                    scale=alt.Scale(domain=[max(0, min_pts - 500), max_pts_track + 1000])),
+            size=alt.Size("Avg Points/Game:Q", title="Efficiency (Pts/Game)", scale=alt.Scale(range=[100, 1000])),
+            color=alt.Color("Player Name:N", title="Player", legend=None),
+            tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
+        ).properties(height=340).interactive()
+        
+        with st.container():
+            st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+            st.altair_chart(bubble_chart, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+except Exception as e:
+    st.error(f"Could not load league data: {e}")
