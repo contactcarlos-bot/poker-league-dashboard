@@ -243,7 +243,7 @@ try:
         
         # Filter: Games Played >= 8 AND Rank (Index) >= 11 (Targets 11th, 12th, etc.)
         df_satellite_qualified = df_sat_check[
-            (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 11)
+            (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 10)
         ].copy()
         
         if df_satellite_qualified.empty:
