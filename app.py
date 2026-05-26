@@ -156,6 +156,14 @@ try:
         search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
         
         # -----------------------------------------------------------------
+        # 🏆 SEASON STANDINGS LEADERBOARD
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("📋 Overall Season Rankings")
+        # Rearrange column sequence for table delivery layout view
+        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
+        
+        # -----------------------------------------------------------------
         # 📈 VISUAL CHARTS
         # -----------------------------------------------------------------
         st.subheader("📈 Top 10 Performance Standings (Points)")
@@ -193,14 +201,6 @@ try:
             tooltip=["Date", "Player Name", "Position"]
         ).properties(height=320).interactive()
         st.altair_chart(position_line_chart, use_container_width=True)
-        
-        # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        # Rearrange column sequence for table delivery layout view
-        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
         
         # -----------------------------------------------------------------
         # 🔍 DETAILED HISTORICAL LOGS / SEARCH REPORTS
