@@ -116,7 +116,7 @@ try:
         else:
             df_last_game = pd.DataFrame(columns=["Player Name", "Last Game Points"])
 
-        # Track finishes
+        # Track granular finish classes
         df_history["🥇 1st"] = df_history["Position"].apply(lambda x: 1 if x == 1 else 0)
         df_history["🥈 2nd"] = df_history["Position"].apply(lambda x: 1 if x == 2 else 0)
         df_history["🥉 3rd"] = df_history["Position"].apply(lambda x: 1 if x == 3 else 0)
@@ -131,7 +131,6 @@ try:
             Final_Tables=("FT", "sum")
         ).reset_index()
         
-        # Calculate Average Points Per Game for the Bubble Chart
         leaderboard["Avg Points/Game"] = (leaderboard["Total_Points"] / leaderboard["Games_Played"]).round(1)
         
         leaderboard = pd.merge(leaderboard, df_last_game, on="Player Name", how="left")
@@ -151,7 +150,6 @@ try:
             max_games = base_sorted_leaderboard["Games Played"].max()
             attendance_kings = base_sorted_leaderboard[base_sorted_leaderboard["Games Played"] == max_games]["Player Name"].tolist()
             
-            # Find Title Champion
             win_sorted = leaderboard.sort_values(by="🥇 1st", ascending=False)
             win_boss = win_sorted.iloc[0]["Player Name"] if not win_sorted.empty else "N/A"
             win_count = win_sorted.iloc[0]["🥇 1st"] if not win_sorted.empty else 0
@@ -163,7 +161,6 @@ try:
             with m_col3:
                 st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
         
-        # Cache state values
         search_player_placeholder = "-- View All --"
         if "search_player_value" in st.session_state:
             search_player_placeholder = st.session_state["search_player_value"]
@@ -210,7 +207,10 @@ try:
             col1, col2, col3 = st.columns(3)
             col1.metric("Total Points", int(player_df["Points"].sum()))
             col2.metric("Games Tracked", int(player_df["Date"].count()))
-            col3.metric("Final Tables", int(player_df["Is_Final_Table"].sum()))
+            
+            # Recalculate local final table matches cleanly
+            ft_count_local = sum(1 for p in player_df["Position"] if p <= 6)
+            col3.metric("Final Tables", ft_count_local)
             st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
         else:
             with st.expander("🔍 View All Game-by-Game History Logs"):
@@ -268,24 +268,4 @@ try:
             st.markdown('</div>', unsafe_allow_html=True)
 
         # -----------------------------------------------------------------
-        # 🔮 NEW 🔥: LEAGUE ARCHETYPES BUBBLE CHART (Absolute Bottom)
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        st.subheader("🔮 League Activity vs Efficiency Matrix")
-        st.markdown("*Bubble Size represents **Average Points Per Game**. Sharks stay high up on small game samples; Grinders stack points over max attendance.*")
-        
-        bubble_chart = alt.Chart(leaderboard).mark_circle().encode(
-            x=alt.X("Games Played:Q", title="Total Attendance (Games)", axis=alt.Axis(tickMinStep=1)),
-            y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
-            size=alt.Size("Avg Points/Game:Q", title="Efficiency (Pts/Game)", scale=alt.Scale(range=[100, 1000])),
-            color=alt.Color("Player Name:N", title="Player", legend=None),
-            tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
-        ).properties(height=340).interactive()
-        
-        with st.container():
-            st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
-            st.altair_chart(bubble_chart, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-except Exception as e:
-    st.error(f"Could not load league data: {e}")
+        # 🔮 LEAGUE ARCHETYPES BUBBLE CHART (Edge
