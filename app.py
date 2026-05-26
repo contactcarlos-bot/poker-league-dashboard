@@ -105,41 +105,43 @@ try:
         df_history = pd.DataFrame(parsed_history_records)
         
         # -----------------------------------------------------------------
-        # 🔄 DYNAMIC 'LAST GAME' ENGINE
+        # DYNAMIC 'LAST GAME' ENGINE
         # -----------------------------------------------------------------
-        # 1. Chronologically sort to find the absolute newest date in the database
         unique_dates_sorted = sorted(df_history["Date"].unique())
         last_game_date = unique_dates_sorted[-1] if unique_dates_sorted else None
         
-        # 2. Extract just the scores belonging to that final date
         if last_game_date:
             df_last_game = df_history[df_history["Date"] == last_game_date][["Player Name", "Points"]].copy()
             df_last_game.columns = ["Player Name", "Last Game Points"]
         else:
             df_last_game = pd.DataFrame(columns=["Player Name", "Last Game Points"])
 
-        # 3. Build master season tallies
         leaderboard = df_history.groupby("Player Name").agg(
             Total_Points=("Points", "sum"), Games_Played=("Date", "count")
         ).reset_index()
         
-        # 4. Merge the last game scores right into the master totals dataframe
         leaderboard = pd.merge(leaderboard, df_last_game, on="Player Name", how="left")
         leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).astype(int)
         
-        # Organize base structure for columns and top-10 chart tracking
         leaderboard.columns = ["Player Name", "Total Points", "Games Played", "Last Game Points"]
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         
         # -----------------------------------------------------------------
-        # 📊 SIDEBAR SETTINGS
+        # 🔎 RELOCATED CONTROLS (Main Page Dropdowns)
         # -----------------------------------------------------------------
-        st.sidebar.header("📊 Dashboard Settings")
-        sort_by = st.sidebar.selectbox(
-            "Sort Leaderboard By:", 
-            ["Total Points (Highest First)", "Last Game Points (Newest Slates)", "Games Played (Most Active)", "Player Name (A-Z)"]
-        )
+        st.markdown("### ⚙️ Dashboard Controls")
+        control_col1, control_col2 = st.columns(2)
         
+        with control_col1:
+            sort_by = st.selectbox(
+                "Sort Leaderboard Table By:", 
+                ["Total Points (Highest First)", "Last Game Points (Newest Slates)", "Games Played (Most Active)", "Player Name (A-Z)"]
+            )
+            
+        with control_col2:
+            all_unique_players = sorted(df_history["Player Name"].unique())
+            search_player = st.selectbox("🔎 Player Report Search:", ["-- View All --"] + all_unique_players)
+            
         if sort_by == "Total Points (Highest First)":
             leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         elif sort_by == "Last Game Points (Newest Slates)":
@@ -150,22 +152,10 @@ try:
             leaderboard = leaderboard.sort_values(by="Player Name", ascending=True).reset_index(drop=True)
         leaderboard.index = leaderboard.index + 1
         
-        st.sidebar.markdown("---")
-        st.sidebar.header("🔎 Player Report Search")
-        all_unique_players = sorted(df_history["Player Name"].unique())
-        search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
-        
-        # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        # Rearrange column sequence for table delivery layout view
-        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
-        
         # -----------------------------------------------------------------
         # 📈 VISUAL CHARTS
         # -----------------------------------------------------------------
+        st.markdown("---")
         st.subheader("📈 Top 10 Performance Standings (Points)")
         import altair as alt
         points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
@@ -203,7 +193,14 @@ try:
         st.altair_chart(position_line_chart, use_container_width=True)
         
         # -----------------------------------------------------------------
-        # 🔍 DETAILED HISTORICAL LOGS / SEARCH REPORTS
+        # 🏆 SEASON STANDINGS LEADERBOARD
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("📋 Overall Season Rankings")
+        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
+        
+        # -----------------------------------------------------------------
+        # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT
         # -----------------------------------------------------------------
         if search_player != "-- View All --":
             st.markdown("---")
