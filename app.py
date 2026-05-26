@@ -304,6 +304,7 @@ try:
         # 🛡️ LEAGUE INFO FOOTER 
         # -----------------------------------------------------------------
         st.markdown("---")
+        st.info("📋 **League Notice:** Satellite Game (Saturday, May 30, 2026 at 4:00pm. You need 8 Games to qualify. **Tournament of Champions** Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
         st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Miguel Craft** 🙉")
 
 except Exception as e:
