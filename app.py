@@ -12,7 +12,7 @@ st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
 # CLOUD CONFIGURATION & PLAYER REGISTRY
 # =========================================================================
 PLAYER_REGISTRY = {
-    "bc": "Brian Cox", "dm": "Dustan Mulkey", "mc": "Mike Craft 👑",
+    "bc": "Brian Cox", "dm": "Dustan Mulkey", "mc": "Mike Craft",
     "jm": "Jeff McCleave", "rm": "Ryan Mulkey", "jal": "John Alvenus",    
     "jq": "Jim Qualizza", "nr": "Nick Rouhani", "sb": "Steve Battard",
     "dl": "David Lee", "tk": "Todd Kinsell", "jh": "Joe Hawkins", "fw": "Frank Watts",
