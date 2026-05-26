@@ -236,7 +236,7 @@ try:
             # 📝 Update these lines manually once the Saturday Satellite finishes!
             st.info("""
             **🛰️ Saturday Satellite Match**
-            * **Status:** Scheduled (May 30 @ 4:00pm)
+            * **Status:** Scheduled May 30 @ 4:00pm
             * **Current Winner:** *TBD* 
             * **Reward:** Advances directly into TOC as Seed #10
             """)
@@ -244,7 +244,7 @@ try:
             # 📝 Update these lines manually once the Tournament of Champions finishes next Sunday!
             st.success("""
             **👑 Tournament of Champions**
-            * **Status:** Scheduled (June 6 @ 1:00pm)
+            * **Status:** Scheduled June 6 @ 1:00PM (Lunch @ 12:15PM)
             * **Season XLVII Champion:** *TBD* 🏆
             * **Runner Up:** *TBD* 🥈
             """)
