@@ -76,15 +76,21 @@ try:
             all_unique_players = sorted(df_history["Player Name"].unique())
             search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
             
-            # -----------------------------------------------------------------
+           # -----------------------------------------------------------------
             # 📈 CHARTS SECTION (Displays Top 10 by default)
             # -----------------------------------------------------------------
             st.subheader("📈 Top 10 Performance Standings")
-            # Grab top 10 point earners for a clean, non-cluttered bar chart
-            top_10 = leaderboard.sort_values(by="Total Points", ascending=False).head(10)
             
-            # Set the name as the index so Streamlit labels the graph columns correctly
-            chart_data = top_10.set_index("Player Name")[["Total Points"]]
+            # 1. Grab the top 10 point earners
+            top_10 = leaderboard.head(10).copy()
+            
+            # 2. Force the data to be sorted explicitly by Total Points for the chart
+            top_10_sorted = top_10.sort_values(by="Total Points", ascending=False)
+            
+            # 3. Set the index on the already-sorted data frame
+            chart_data = top_10_sorted.set_index("Player Name")[["Total Points"]]
+            
+            # 4. Render the chart
             st.bar_chart(chart_data)
             
             # -----------------------------------------------------------------
