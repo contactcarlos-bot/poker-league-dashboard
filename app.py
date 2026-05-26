@@ -9,31 +9,6 @@ st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layou
 st.title("🏆 Dirty Town Poker League Leaderboard")
 
 # =========================================================================
-# 🎨 CUSTOM BACKGROUND IMAGE (Online URL)
-# =========================================================================
-background_image_url = "https://i.imgur.com/e84s6AY.jpeg"
-
-st.markdown(
-    f"""
-    <style>
-    .stApp {{
-        background-image: url("{background_image_url}");
-        background-attachment: fixed;
-        background-size: cover;
-        background-position: center;
-    }}
-    /* Optional: Softens the main content area text cards so they are readable over a busy photo */
-    div[data-testid="stVerticalBlock"] > div {{
-        background-color: rgba(255, 255, 255, 0.00); 
-        border-radius: 10px;
-        padding: 10px;
-    }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# =========================================================================
 # CLOUD CONFIGURATION & PLAYER REGISTRY
 # =========================================================================
 PLAYER_REGISTRY = {
