@@ -234,7 +234,7 @@ try:
         # -----------------------------------------------------------------
         st.markdown("---")
         st.subheader("🃏 Satellite Game Qualified Players")
-        st.markdown("*Players with **8 or more games played** who are currently ranked **10th place or lower (10th, 11th, etc.)**.*")
+        st.markdown("*Players with **8 or more games played** who are currently ranked **10th place or lower (11th, 12th, etc.)**.*")
 
         # Create a copy of the overall sorted rankings to check exact placements
         df_sat_check = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
@@ -243,18 +243,23 @@ try:
         
         # Filter: Games Played >= 8 AND Rank (Index) >= 11 (Targets 11th, 12th, etc.)
         df_satellite_qualified = df_sat_check[
-            (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 10)
+            (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 11)
         ].copy()
         
-        # Insert the Rank as a clean visible column for the players
-        df_satellite_qualified["Current Rank"] = df_satellite_qualified.index
-        
-        # Clean up columns to show only what matters for qualification
-        sat_display_df = df_satellite_qualified[["Current Rank", "Player Name", "Games Played", "Total Points"]]
-        
-        if sat_display_df.empty:
+        if df_satellite_qualified.empty:
             st.info("No players currently meet the qualification criteria for the Satellite Game.")
         else:
+            # Insert the actual Season Rank as a clean visible column
+            df_satellite_qualified["Season Rank"] = df_satellite_qualified.index
+            
+            # Reset the dataframe index and shift by 1 to create a clean sequential list numbering (1, 2, 3...)
+            df_satellite_qualified = df_satellite_qualified.reset_index(drop=True)
+            df_satellite_qualified.index = df_satellite_qualified.index + 1
+            df_satellite_qualified["#"] = df_satellite_qualified.index
+            
+            # Reorder columns to put the list number first
+            sat_display_df = df_satellite_qualified[["#", "Season Rank", "Player Name", "Games Played", "Total Points"]]
+            
             with st.container():
                 st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
                 st.dataframe(sat_display_df, use_container_width=True, hide_index=True)
