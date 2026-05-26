@@ -116,37 +116,45 @@ try:
         else:
             df_last_game = pd.DataFrame(columns=["Player Name", "Last Game Points"])
 
+        # Calculate Final Table Appearance counts (Position <= 6)
+        df_history["Is_Final_Table"] = df_history["Position"].apply(lambda x: 1 if x <= 6 else 0)
+        
         leaderboard = df_history.groupby("Player Name").agg(
-            Total_Points=("Points", "sum"), Games_Played=("Date", "count")
+            Total_Points=("Points", "sum"),
+            Games_Played=("Date", "count"),
+            Final_Tables=("Is_Final_Table", "sum")
         ).reset_index()
         
         leaderboard = pd.merge(leaderboard, df_last_game, on="Player Name", how="left")
         leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).astype(int)
-        leaderboard.columns = ["Player Name", "Total Points", "Games Played", "Last Game Points"]
+        leaderboard.columns = ["Player Name", "Total Points", "Games Played", "Final Tables", "Last Game Points"]
         
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         
         # -----------------------------------------------------------------
-        # NEW 🔥: SPICED-UP METRICS SHELF (Top Highlights)
+        # SPICED-UP METRICS SHELF (Top Highlights)
         # -----------------------------------------------------------------
         if not base_sorted_leaderboard.empty:
             st.markdown("### 👑 Season Milestones")
             m_col1, m_col2, m_col3 = st.columns(3)
             
-            # Find insights dynamically
             current_leader = base_sorted_leaderboard.iloc[0]["Player Name"]
             max_games = base_sorted_leaderboard["Games Played"].max()
             attendance_kings = base_sorted_leaderboard[base_sorted_leaderboard["Games Played"] == max_games]["Player Name"].tolist()
-            top_single_score_row = df_history.loc[df_history["Points"].idxmax()]
+            
+            # Find the final table boss
+            ft_sorted = leaderboard.sort_values(by="Final Tables", ascending=False)
+            ft_boss = ft_sorted.iloc[0]["Player Name"] if not ft_sorted.empty else "N/A"
+            ft_count = ft_sorted.iloc[0]["Final Tables"] if not ft_sorted.empty else 0
             
             with m_col1:
                 st.metric("League Leader 🥇", current_leader, f"{base_sorted_leaderboard.iloc[0]['Total Points']} pts")
             with m_col2:
                 st.metric("Max Attendance 🏃‍♂️", attendance_kings[0] if attendance_kings else "N/A", f"{max_games} games")
             with m_col3:
-                st.metric("Record Heater 🔥", top_single_score_row["Player Name"], f"{top_single_score_row['Points']} pts")
+                st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
         
-        # Session cache setup for controls
+        # Cache placeholder state rules
         sort_by_placeholder = "Total Points (Highest First)"
         search_player_placeholder = "-- View All --"
         
@@ -172,10 +180,8 @@ try:
             display_leaderboard = display_leaderboard.sort_values(by="Player Name", ascending=True).reset_index(drop=True)
         display_leaderboard.index = display_leaderboard.index + 1
         
-        # Format columns layout view array clean
-        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]]
+        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "Final Tables"]]
 
-        # NEW 🔥: Add color formatting stylers to make winners stand out
         def highlight_top_scores(val):
             return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
 
@@ -183,22 +189,7 @@ try:
         st.dataframe(styled_df, use_container_width=True)
         
         # -----------------------------------------------------------------
-        # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT / ALL GAME LOGS
-        # -----------------------------------------------------------------
-        if search_player_placeholder != "-- View All --":
-            st.markdown("---")
-            st.subheader(f"📖 Individual Report: {search_player_placeholder}")
-            player_df = df_history[df_history["Player Name"] == search_player_placeholder].copy()
-            col1, col2 = st.columns(2)
-            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
-            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
-            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
-        else:
-            with st.expander("🔍 View All Game-by-Game History Logs"):
-                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
-
-        # -----------------------------------------------------------------
-        # ⚙️ RELOCATED CONTROLS (Placed Directly Above the Weekly Chart)
+        # ⚙️ RELOCATED CONTROLS (Moved up above detailed logs/all games expander)
         # -----------------------------------------------------------------
         st.markdown("---")
         st.markdown("### ⚙️ Dashboard Controls")
@@ -226,8 +217,24 @@ try:
                 st.rerun()
 
         # -----------------------------------------------------------------
+        # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT / ALL GAME LOGS
+        # -----------------------------------------------------------------
+        if search_player_placeholder != "-- View All --":
+            st.markdown(f"#### 📖 Individual Performance Ledger")
+            player_df = df_history[df_history["Player Name"] == search_player_placeholder].copy()
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Total Points", int(player_df["Points"].sum()))
+            col2.metric("Games Tracked", int(player_df["Date"].count()))
+            col3.metric("Final Tables", int(player_df["Is_Final_Table"].sum()))
+            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
+        else:
+            with st.expander("🔍 View All Game-by-Game History Logs"):
+                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], use_container_width=True, hide_index=True)
+
+        # -----------------------------------------------------------------
         # 📉 WEEKLY POSITION TRACKER LINE GRAPH 
         # -----------------------------------------------------------------
+        st.markdown("---")
         if last_game_date:
             st.subheader(f"📉 Weekly Finishing Position History (Last Game: {last_game_date})")
         else:
