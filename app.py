@@ -269,8 +269,8 @@ try:
         st.markdown("---")
         st.subheader("📈 Top 10 Performance Standings (Points)")
         points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-            x=alt.X("Player Name:N", sort="-y", title="Player Name", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
+            x=alt.X("Player Name:N", sort="-y", title="", axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("Total Points:Q", title=""),
             color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
             tooltip=["Player Name", "Total Points"]
         ).properties(height=260)
