@@ -6,7 +6,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
-st.title("🏆 Dirty Town Poker League Standings")
+st.title("🏆 Dirty Town Poker League Leaderboard")
 
 # =========================================================================
 # CLOUD CONFIGURATION & PLAYER REGISTRY
@@ -78,7 +78,6 @@ try:
             if not raw_list:
                 continue
                 
-            # FIX: Robustly differentiate raw date formatting
             if "-" in game_date and len(game_date.split("-")[0]) == 4:
                 is_historical = True
             else:
@@ -86,7 +85,6 @@ try:
                 
             total_players = len(raw_list)
             for index, raw_player_input in enumerate(raw_list):
-                # FIX: Handle Elimination Order vs Backlog Order precisely
                 if is_historical:
                     position = index + 1
                 else:
@@ -98,7 +96,7 @@ try:
                 player_name = PLAYER_REGISTRY.get(lookup_key, raw_player_input.strip().title())
                 
                 parsed_history_records.append({
-                    "Date": game_date.split()[0], # FIX: Discard timestamps to protect grouping metrics
+                    "Date": game_date.split()[0],
                     "Player Name": player_name, 
                     "Position": int(position), 
                     "Points": int(points)
@@ -106,20 +104,46 @@ try:
         
         df_history = pd.DataFrame(parsed_history_records)
         
+        # -----------------------------------------------------------------
+        # 🔄 DYNAMIC 'LAST GAME' ENGINE
+        # -----------------------------------------------------------------
+        # 1. Chronologically sort to find the absolute newest date in the database
+        unique_dates_sorted = sorted(df_history["Date"].unique())
+        last_game_date = unique_dates_sorted[-1] if unique_dates_sorted else None
+        
+        # 2. Extract just the scores belonging to that final date
+        if last_game_date:
+            df_last_game = df_history[df_history["Date"] == last_game_date][["Player Name", "Points"]].copy()
+            df_last_game.columns = ["Player Name", "Last Game Points"]
+        else:
+            df_last_game = pd.DataFrame(columns=["Player Name", "Last Game Points"])
+
+        # 3. Build master season tallies
         leaderboard = df_history.groupby("Player Name").agg(
             Total_Points=("Points", "sum"), Games_Played=("Date", "count")
         ).reset_index()
-        leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
+        
+        # 4. Merge the last game scores right into the master totals dataframe
+        leaderboard = pd.merge(leaderboard, df_last_game, on="Player Name", how="left")
+        leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).astype(int)
+        
+        # Organize base structure for columns and top-10 chart tracking
+        leaderboard.columns = ["Player Name", "Total Points", "Games Played", "Last Game Points"]
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         
         # -----------------------------------------------------------------
         # 📊 SIDEBAR SETTINGS
         # -----------------------------------------------------------------
         st.sidebar.header("📊 Dashboard Settings")
-        sort_by = st.sidebar.selectbox("Sort Leaderboard By:", ["Total Points (Highest First)", "Games Played (Most Active)", "Player Name (A-Z)"])
+        sort_by = st.sidebar.selectbox(
+            "Sort Leaderboard By:", 
+            ["Total Points (Highest First)", "Last Game Points (Newest Slates)", "Games Played (Most Active)", "Player Name (A-Z)"]
+        )
         
         if sort_by == "Total Points (Highest First)":
             leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
+        elif sort_by == "Last Game Points (Newest Slates)":
+            leaderboard = leaderboard.sort_values(by="Last Game Points", ascending=False).reset_index(drop=True)
         elif sort_by == "Games Played (Most Active)":
             leaderboard = leaderboard.sort_values(by="Games Played", ascending=False).reset_index(drop=True)
         elif sort_by == "Player Name (A-Z)":
@@ -130,32 +154,9 @@ try:
         st.sidebar.header("🔎 Player Report Search")
         all_unique_players = sorted(df_history["Player Name"].unique())
         search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
-                
-        # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        st.dataframe(leaderboard, use_container_width=True)
         
         # -----------------------------------------------------------------
-        # 🔍 DETAILED HISTORICAL LOGS / SEARCH REPORTS
-        # -----------------------------------------------------------------
-        if search_player != "-- View All --":
-            st.markdown("---")
-            st.subheader(f"📖 Individual Report: {search_player}")
-            player_df = df_history[df_history["Player Name"] == search_player].copy()
-            col1, col2 = st.columns(2)
-            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
-            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
-            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
-        else:
-            with st.expander("🔍 View All Game-by-Game History Logs"):
-                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
-        
-        
-        # -----------------------------------------------------------------
-        # 📈 VISUAL CHARTS (Moved to top for premium placement layout)
+        # 📈 VISUAL CHARTS
         # -----------------------------------------------------------------
         st.subheader("📈 Top 10 Performance Standings (Points)")
         import altair as alt
@@ -168,7 +169,11 @@ try:
         st.altair_chart(points_chart, use_container_width=True)
         
         st.markdown("---")
-        st.subheader("📉 Weekly Finishing Position History")
+        if last_game_date:
+            st.subheader(f"📉 Weekly Finishing Position History (Last Game: {last_game_date})")
+        else:
+            st.subheader("📉 Weekly Finishing Position History")
+            
         df_sorted_dates = df_history.sort_values(by="Date")
         if search_player != "-- View All --":
             st.markdown(f"*Tracking finishing trends over time for **{search_player}**.*")
@@ -188,5 +193,29 @@ try:
             tooltip=["Date", "Player Name", "Position"]
         ).properties(height=320).interactive()
         st.altair_chart(position_line_chart, use_container_width=True)
+        
+        # -----------------------------------------------------------------
+        # 🏆 SEASON STANDINGS LEADERBOARD
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("📋 Overall Season Rankings")
+        # Rearrange column sequence for table delivery layout view
+        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
+        
+        # -----------------------------------------------------------------
+        # 🔍 DETAILED HISTORICAL LOGS / SEARCH REPORTS
+        # -----------------------------------------------------------------
+        if search_player != "-- View All --":
+            st.markdown("---")
+            st.subheader(f"📖 Individual Report: {search_player}")
+            player_df = df_history[df_history["Player Name"] == search_player].copy()
+            col1, col2 = st.columns(2)
+            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
+            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
+            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
+        else:
+            with st.expander("🔍 View All Game-by-Game History Logs"):
+                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
+
 except Exception as e:
     st.error(f"Could not load league data: {e}")
