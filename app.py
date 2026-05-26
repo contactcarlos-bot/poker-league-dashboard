@@ -95,28 +95,7 @@ try:
                 color="Total Points", # Adds a beautiful color gradient (darker = more points)
                 color_continuous_scale="Viridis" 
             )
-            # -----------------------------------------------------------------
-            # 📈 NATIVE ALTAIR GRAPH (Locks the descending order perfectly!)
-            # -----------------------------------------------------------------
-            st.subheader("📈 Top 10 Performance Standings")
             
-            # Grab top 10 point earners from our base point list
-            top_10 = base_sorted_leaderboard.head(10).copy()
-            
-            # Use Streamlit's native premium Altair configuration to build a hard-sorted chart
-            import altair as alt
-            
-            native_chart = alt.Chart(top_10).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-                # sort='-y' tells the web framework to strictly lock the bars descending by total scores
-                x=alt.X("Player Name:N", sort="-y", title="Player Name", axis=alt.Axis(labelAngle=-45)),
-                y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
-                color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
-                tooltip=["Player Name", "Total Points", "Games Played"]
-            ).properties(height=350)
-            
-            st.altair_chart(native_chart, use_container_width=True)
-
-
             
             # CRITICAL LINE: Forces Plotly to respect our exact dataframe sorting layout (1st place to 10th place)
             fig.update_xaxes(categoryorder="total descending")
