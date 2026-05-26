@@ -6,7 +6,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
-st.title("🏆 Dirty Town Poker League Leaderboard")
+st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
 
 # =========================================================================
 # CLOUD CONFIGURATION & PLAYER REGISTRY
