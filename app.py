@@ -24,7 +24,7 @@ st.markdown(
     }}
     /* Optional: Softens the main content area text cards so they are readable over a busy photo */
     div[data-testid="stVerticalBlock"] > div {{
-        background-color: rgba(255, 255, 255, 0.02); 
+        background-color: rgba(255, 255, 255, 0.00); 
         border-radius: 10px;
         padding: 10px;
     }}
