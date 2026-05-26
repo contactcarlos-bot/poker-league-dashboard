@@ -153,19 +153,30 @@ try:
         leaderboard.index = leaderboard.index + 1
         
         # -----------------------------------------------------------------
-        # 📈 VISUAL CHARTS
+        # 🏆 SEASON STANDINGS LEADERBOARD (Moved to Premium Top Position)
         # -----------------------------------------------------------------
         st.markdown("---")
-        st.subheader("📈 Top 10 Performance Standings (Points)")
-        import altair as alt
-        points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-            x=alt.X("Player Name:N", sort="-y", title="Player Name", axis=alt.Axis(labelAngle=-45)),
-            y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
-            color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
-            tooltip=["Player Name", "Total Points"]
-        ).properties(height=260)
-        st.altair_chart(points_chart, use_container_width=True)
+        st.subheader("📋 Overall Season Rankings")
+        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
         
+        # -----------------------------------------------------------------
+        # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT / ALL GAME LOGS
+        # -----------------------------------------------------------------
+        if search_player != "-- View All --":
+            st.markdown("---")
+            st.subheader(f"📖 Individual Report: {search_player}")
+            player_df = df_history[df_history["Player Name"] == search_player].copy()
+            col1, col2 = st.columns(2)
+            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
+            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
+            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
+        else:
+            with st.expander("🔍 View All Game-by-Game History Logs"):
+                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
+
+        # -----------------------------------------------------------------
+        # 📉 WEEKLY POSITION TRACKER LINE GRAPH (Moved Below Data Section)
+        # -----------------------------------------------------------------
         st.markdown("---")
         if last_game_date:
             st.subheader(f"📉 Weekly Finishing Position History (Last Game: {last_game_date})")
@@ -184,6 +195,7 @@ try:
         line_data = pivot_df.reset_index().melt("Date", var_name="Player Name", value_name="Position").dropna()
         line_data["Position"] = line_data["Position"].astype(int)
         
+        import altair as alt
         position_line_chart = alt.Chart(line_data).mark_line(point=True, strokeWidth=3).encode(
             x=alt.X("Date:N", title="Game Date"),
             y=alt.Y("Position:Q", title="Finishing Place", sort="descending", scale=alt.Scale(domain=[1, int(df_history["Position"].max())]), axis=alt.Axis(tickMinStep=1)),
@@ -191,28 +203,19 @@ try:
             tooltip=["Date", "Player Name", "Position"]
         ).properties(height=320).interactive()
         st.altair_chart(position_line_chart, use_container_width=True)
-        
+
         # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
+        # 📈 VISUAL BAR CHART (Relocated to the Absolute Bottom of Page)
         # -----------------------------------------------------------------
         st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        st.dataframe(leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played"]], use_container_width=True)
-        
-        # -----------------------------------------------------------------
-        # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT
-        # -----------------------------------------------------------------
-        if search_player != "-- View All --":
-            st.markdown("---")
-            st.subheader(f"📖 Individual Report: {search_player}")
-            player_df = df_history[df_history["Player Name"] == search_player].copy()
-            col1, col2 = st.columns(2)
-            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
-            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
-            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
-        else:
-            with st.expander("🔍 View All Game-by-Game History Logs"):
-                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
+        st.subheader("📈 Top 10 Performance Standings (Points)")
+        points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+            x=alt.X("Player Name:N", sort="-y", title="Player Name", axis=alt.Axis(labelAngle=-45)),
+            y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
+            color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
+            tooltip=["Player Name", "Total Points"]
+        ).properties(height=260)
+        st.altair_chart(points_chart, use_container_width=True)
 
 except Exception as e:
     st.error(f"Could not load league data: {e}")
