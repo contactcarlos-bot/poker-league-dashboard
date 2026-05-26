@@ -9,13 +9,22 @@ st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layou
 st.title("🏆 Dirty Town Poker League Leaderboard")
 
 def get_cloud_history_data():
-    """Connects to Google Sheets using Streamlit Secrets and pulls the pre-calculated history."""
+    """Connects to Google Sheets and pulls the pre-calculated history."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
-    google_secrets = dict(st.secrets["gcp_service_account"])
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(google_secrets, scope)
+    # Check if we are running locally or on the cloud server
+    if "gcp_service_account" in st.secrets:
+        # Online Server Mode
+        google_secrets = dict(st.secrets["gcp_service_account"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(google_secrets, scope)
+    else:
+        # Local Desktop Fallback Mode
+        if not os.path.exists("credentials.json"):
+            st.error("Missing credentials verification file!")
+            st.stop()
+        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        
     client = gspread.authorize(creds)
-    
     workbook = client.open("Dirty Town Poker League Input (Responses)")
     sheet = workbook.worksheet("Database History")
     return sheet.get_all_records()
@@ -27,42 +36,54 @@ try:
         st.warning("No calculated match data found in your 'Database History' tab yet!")
     else:
         df_history = pd.DataFrame(records)
-        
-        # Force all column names to standard capitalization to avoid mismatch crashes
         df_history.columns = [str(col).strip().title() for col in df_history.columns]
         
-        # Safe-check if 'Points' column is missing after standardization
         if "Points" not in df_history.columns:
             st.error("⚠️ The 'Points' column header is missing in your Google Sheet tab.")
-            st.info("Please make sure row 1 of your 'Database History' tab has: Date | Player Name | Position | Points")
         else:
-            # Clean and convert numeric types safely
             df_history["Points"] = pd.to_numeric(df_history["Points"], errors="coerce").fillna(0).astype(int)
             
-            # Group by Player Name and tally up the grand totals
+            # Group data to build aggregate totals
             leaderboard = df_history.groupby("Player Name").agg(
                 Total_Points=("Points", "sum"),
                 Games_Played=("Date", "count")
             ).reset_index()
             
-            # Sort with the highest point earner at the top
-            leaderboard = leaderboard.sort_values(by="Total_Points", ascending=False).reset_index(drop=True)
-            
-            # Format column names nicely for the users
+            # Format display columns
             leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
-            leaderboard.index = leaderboard.index + 1  # Shifts index to start from 1 instead of 0
             
-            # Render the beautiful interactive leaderboard table
+            # -----------------------------------------------------------------
+            # 🔄 NEW INTERACTIVE SORTING INTERFACE
+            # -----------------------------------------------------------------
+            st.sidebar.header("📊 Dashboard Settings")
+            
+            # Dropdown menu to select what metric to sort by
+            sort_by = st.sidebar.selectbox(
+                "Sort Leaderboard By:",
+                options=["Total Points (Highest First)", "Games Played (Most Active)", "Player Name (A-Z)"]
+            )
+            
+            # Apply sorting logic based on selection
+            if sort_by == "Total Points (Highest First)":
+                leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
+            elif sort_by == "Games Played (Most Active)":
+                leaderboard = leaderboard.sort_values(by="Games Played", ascending=False).reset_index(drop=True)
+            elif sort_by == "Player Name (A-Z)":
+                leaderboard = leaderboard.sort_values(by="Player Name", ascending=True).reset_index(drop=True)
+            
+            # Re-align index ranks so the display order is clear
+            leaderboard.index = leaderboard.index + 1
+            
+            # -----------------------------------------------------------------
+            # Render Leaderboard Display Table
             st.dataframe(leaderboard, use_container_width=True)
             
-            # Add an expandable view for match breakdowns
+            # Historical expander view below
             with st.expander("🔍 View Game-by-Game History Log"):
                 if "Position" in df_history.columns:
                     sorted_log = df_history.sort_values(by=["Date", "Position"], ascending=[False, True])
                 else:
                     sorted_log = df_history.sort_values(by="Date", ascending=False)
-                
-                # FIXED LINE: Changed 'index=False' to 'hide_index=True' to comply with Streamlit rules
                 st.dataframe(sorted_log, use_container_width=True, hide_index=True)
 
 except Exception as e:
