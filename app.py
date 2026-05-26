@@ -181,10 +181,18 @@ try:
         
         final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"]]
 
-        def highlight_top_scores(val):
+        # Custom highlighters for green (points won) and red (low attendance)
+        def highlight_last_game(val):
             return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
 
-        styled_df = final_table_df.style.map(highlight_top_scores, subset=["Last Game Points"])
+        def highlight_low_attendance(val):
+            return 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;' if val <= 7 else ''
+
+        # Chain both mapping operations onto the styling pipeline
+        styled_df = final_table_df.style\
+            .map(highlight_last_game, subset=["Last Game Points"])\
+            .map(highlight_low_attendance, subset=["Games Played"])
+            
         st.dataframe(styled_df, use_container_width=True)
         
         # -----------------------------------------------------------------
