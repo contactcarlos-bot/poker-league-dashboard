@@ -123,6 +123,29 @@ try:
         all_unique_players = sorted(df_history["Player Name"].unique())
         search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
         
+
+        # -----------------------------------------------------------------
+        # 🏆 SEASON STANDINGS LEADERBOARD
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("📋 Overall Season Rankings")
+        st.dataframe(leaderboard, use_container_width=True)
+        
+        # -----------------------------------------------------------------
+        # 🔍 DETAILED HISTORICAL LOGS
+        # -----------------------------------------------------------------
+        if search_player != "-- View All --":
+            st.markdown("---")
+            st.subheader(f"📖 Individual Report: {search_player}")
+            player_df = df_history[df_history["Player Name"] == search_player].copy()
+            col1, col2 = st.columns(2)
+            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
+            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
+            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
+        else:
+            with st.expander("🔍 View All Game-by-Game History Logs"):
+                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
+
         # -----------------------------------------------------------------
         # 📈 BAR CHART
         # -----------------------------------------------------------------
@@ -161,27 +184,5 @@ try:
         ).properties(height=320).interactive()
         st.altair_chart(position_line_chart, use_container_width=True)
         
-        # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        st.dataframe(leaderboard, use_container_width=True)
-        
-        # -----------------------------------------------------------------
-        # 🔍 DETAILED HISTORICAL LOGS
-        # -----------------------------------------------------------------
-        if search_player != "-- View All --":
-            st.markdown("---")
-            st.subheader(f"📖 Individual Report: {search_player}")
-            player_df = df_history[df_history["Player Name"] == search_player].copy()
-            col1, col2 = st.columns(2)
-            col1.metric("Total Points Earned", int(player_df["Points"].sum()))
-            col2.metric("Total Games Tracked", int(player_df["Date"].count()))
-            st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
-        else:
-            with st.expander("🔍 View All Game-by-Game History Logs"):
-                st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, hide_index=True)
-
 except Exception as e:
     st.error(f"Could not load league data: {e}")
