@@ -81,17 +81,33 @@ try:
             # -----------------------------------------------------------------
             st.subheader("📈 Top 10 Performance Standings")
             
-            # 1. Grab the top 10 point earners
+            # Grab the top 10 point earners directly from our already-sorted table
             top_10 = leaderboard.head(10).copy()
             
-            # 2. Force the data to be sorted explicitly by Total Points for the chart
-            top_10_sorted = top_10.sort_values(by="Total Points", ascending=False)
+            # Create a professional Plotly Bar Chart that hard-locks the sort order
+            import plotly.express as px
             
-            # 3. Set the index on the already-sorted data frame
-            chart_data = top_10_sorted.set_index("Player Name")[["Total Points"]]
+            fig = px.bar(
+                top_10,
+                x="Player Name",
+                y="Total Points",
+                text="Total Points",  # Puts the exact score number right on top of each bar
+                color="Total Points", # Adds a beautiful color gradient (darker = more points)
+                color_continuous_scale="Viridis" 
+            )
             
-            # 4. Render the chart
-            st.bar_chart(chart_data)
+            # CRITICAL LINE: Forces Plotly to respect our exact dataframe sorting layout (1st place to 10th place)
+            fig.update_xaxes(categoryorder="total descending")
+            
+            # Adjust spacing so it looks great on both laptop screens and mobile phones
+            fig.update_layout(
+                margin=dict(l=20, r=20, t=20, b=20),
+                height=400,
+                coloraxis_showscale=False # Hides the messy color side-bar legend
+            )
+            
+            # Render the advanced chart onto the website
+            st.plotly_chart(fig, use_container_width=True)
             
             # -----------------------------------------------------------------
             # 🏆 MAIN LEADERBOARD DISPLAY
