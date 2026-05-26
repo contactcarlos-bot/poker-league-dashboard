@@ -304,7 +304,7 @@ try:
         # 🛡️ LEAGUE INFO FOOTER 
         # -----------------------------------------------------------------
         st.markdown("---")
-        st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Miguel Craft**. 👳")
+        st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Miguel Craft** 🙉")
 
 except Exception as e:
     st.error(f"Could not load league data: {e}")
