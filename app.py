@@ -154,7 +154,7 @@ try:
             with m_col3:
                 st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
         
-        # Cache placeholder state rules
+        # Cache placeholder state rules (Defaults to Highest First)
         search_player_placeholder = "-- View All --"
         if "search_player_value" in st.session_state:
             search_player_placeholder = st.session_state["search_player_value"]
@@ -165,15 +165,8 @@ try:
         st.markdown("---")
         st.subheader("📋 Overall Season Rankings")
         
-        display_leaderboard = leaderboard.copy()
-        if sort_by_placeholder == "Total Points (Highest First)":
-            display_leaderboard = display_leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
-        elif sort_by_placeholder == "Last Game Points (Newest Slates)":
-            display_leaderboard = display_leaderboard.sort_values(by="Last Game Points", ascending=False).reset_index(drop=True)
-        elif sort_by_placeholder == "Games Played (Most Active)":
-            display_leaderboard = display_leaderboard.sort_values(by="Games Played", ascending=False).reset_index(drop=True)
-        elif sort_by_placeholder == "Player Name (A-Z)":
-            display_leaderboard = display_leaderboard.sort_values(by="Player Name", ascending=True).reset_index(drop=True)
+        # Default Sorting: Always Total Points descending
+        display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         display_leaderboard.index = display_leaderboard.index + 1
         
         final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "Final Tables"]]
@@ -185,32 +178,20 @@ try:
         st.dataframe(styled_df, use_container_width=True)
         
         # -----------------------------------------------------------------
-        # ⚙️ RELOCATED CONTROLS (Moved up above detailed logs/all games expander)
+        # ⚙️ DASHBOARD CONTROLS (Sort drop-down removed)
         # -----------------------------------------------------------------
         st.markdown("---")
         st.markdown("### ⚙️ Dashboard Controls")
-        control_col1, control_col2 = st.columns(2)
         
-        with control_col1:
-            sort_by = st.selectbox(
-                "Sort Leaderboard Table By:", 
-                ["Total Points (Highest First)", "Last Game Points (Newest Slates)", "Games Played (Most Active)", "Player Name (A-Z)"],
-                index=["Total Points (Highest First)", "Last Game Points (Newest Slates)", "Games Played (Most Active)", "Player Name (A-Z)"].index(sort_by_placeholder)
-            )
-            if sort_by != sort_by_placeholder:
-                st.session_state["sort_by_value"] = sort_by
-                st.rerun()
-            
-        with control_col2:
-            all_unique_players = sorted(df_history["Player Name"].unique())
-            search_player = st.selectbox(
-                "🔎 Player Report Search:", 
-                ["-- View All --"] + all_unique_players,
-                index=(["-- View All --"] + all_unique_players).index(search_player_placeholder)
-            )
-            if search_player != search_player_placeholder:
-                st.session_state["search_player_value"] = search_player
-                st.rerun()
+        all_unique_players = sorted(df_history["Player Name"].unique())
+        search_player = st.selectbox(
+            "🔎 Player Report Search:", 
+            ["-- View All --"] + all_unique_players,
+            index=(["-- View All --"] + all_unique_players).index(search_player_placeholder)
+        )
+        if search_player != search_player_placeholder:
+            st.session_state["search_player_value"] = search_player
+            st.rerun()
 
         # -----------------------------------------------------------------
         # 🔍 DETAILED INDIVIDUAL SEARCH PERFORMANCE REPORT / ALL GAME LOGS
