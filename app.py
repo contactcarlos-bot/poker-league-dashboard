@@ -4,20 +4,12 @@ import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# Copy your LEAGUE_MATRIX and PLAYER_REGISTRY maps exactly from your tracking script
-PLAYER_REGISTRY = {
-    "bc": "Brian Cox", "dm": "Dustan Mulkey", "mc": "Mike Craft", # ... include your full registry here
-}
-
-LEAGUE_MATRIX = {
-    8:  [558, 343, 240, 174, 135, 118, 110, 100],
-    # ... include your full matrix here
-}
+st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
 st.title("🏆 Dirty Town Poker League Leaderboard")
 
-def get_live_data_from_google():
-    """Connects to Google Sheets using Streamlit Secrets instead of a local json file"""
+def get_cloud_history_data():
+    """Connects to Google Sheets using Streamlit Secrets and pulls the pre-calculated history."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
     # Authenticate safely using Streamlit's cloud secrets vault
@@ -26,64 +18,43 @@ def get_live_data_from_google():
     client = gspread.authorize(creds)
     
     workbook = client.open("Dirty Town Poker League Input (Responses)")
-    sheet = workbook.sheet1
-    all_rows = sheet.get_all_values()
     
-    # Exclude empty space rows
-    return [row for row in all_rows if any(cell.strip() for cell in row)]
+    # CRITICAL: Read directly from the calculated history tab!
+    sheet = workbook.worksheet("Database History")
+    return sheet.get_all_records()
 
 try:
-    cleaned_rows = get_live_data_from_google()
+    # 1. Fetch data from the cloud history sheet
+    records = get_cloud_history_data()
     
-    if len(cleaned_rows) <= 1:
-        st.warning("No matches recorded in the database yet!")
+    if not records:
+        st.warning("No calculated match data found in your 'Database History' tab yet!")
     else:
-        all_game_entries = []
+        # 2. Load records into a clean Pandas DataFrame
+        df_history = pd.DataFrame(records)
         
-        # Parse every row submitted to calculate overall standings on-the-fly
-        for row in cleaned_rows[1:]:
-            if len(row) >= 3:
-                target_date = str(row[1]).strip()
-                raw_standings_text = row[2]
-            else:
-                target_date = str(row[0]).strip()
-                raw_standings_text = row[1]
-                
-            # Form lines are logged bottom-up (last place to 1st). Reverse them to calculate 1st down.
-            raw_list = [line.strip() for line in str(raw_standings_text).split('\n') if line.strip()]
-            raw_list.reverse()
-            total_players = len(raw_list)
-            
-            for index, raw_player_input in enumerate(raw_list):
-                position = index + 1
-                
-                # Fetch matrix points
-                points_list = LEAGUE_MATRIX.get(total_players, [100])
-                points = points_list[position - 1] if (position - 1) < len(points_list) else 100
-                
-                lookup_key = raw_player_input.strip().lower()
-                player_name = PLAYER_REGISTRY.get(lookup_key, raw_player_input.strip().title())
-                
-                all_game_entries.append({
-                    "Player Name": player_name,
-                    "Points": int(points),
-                    "Date": target_date
-                })
+        # 3. Clean and convert numeric types safely
+        df_history["Points"] = pd.to_numeric(df_history["Points"], errors="coerce").fillna(0).astype(int)
         
-        # Group and build master leaderboard dataframe
-        df_history = pd.DataFrame(all_game_entries)
+        # 4. Group by Player Name and tally up the grand totals
         leaderboard = df_history.groupby("Player Name").agg(
             Total_Points=("Points", "sum"),
             Games_Played=("Date", "count")
         ).reset_index()
         
+        # 5. Sort with the highest point earner at the top
         leaderboard = leaderboard.sort_values(by="Total_Points", ascending=False).reset_index(drop=True)
-        leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
-        leaderboard.index = leaderboard.index + 1  # Standard rank display format
         
-        # Render the dashboard out to your web users
+        # Format column names nicely for the users
+        leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
+        leaderboard.index = leaderboard.index + 1  # Shifts index from 0 to 1 for rank numbering
+        
+        # 6. Display the beautiful interactive leaderboard table
         st.dataframe(leaderboard, use_container_width=True)
+        
+        # Optional: Add a little expandable view so players can see match breakdowns
+        with st.expander("🔍 View Game-by-Game History Log"):
+            st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True]), use_container_width=True, index=False)
 
 except Exception as e:
-    st.error(f"Could not load data: {e}")
-    st.info("Ensure your Google Service Account keys are configured in your Streamlit Advanced Secrets dashboard.")
+    st.error(f"Could not load league data: {e}")
