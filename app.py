@@ -47,7 +47,7 @@ try:
             ).reset_index()
             leaderboard.columns = ["Player Name", "Total Points", "Games Played"]
             
-            # CRITICAL FIX: Define the base sorted leaderboard baseline FIRST
+            # Define the base sorted leaderboard baseline
             base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
             
             # -----------------------------------------------------------------
@@ -70,47 +70,51 @@ try:
             
             leaderboard.index = leaderboard.index + 1
             
-            # 🕵️‍♂️ Individual Player Lookup Section
+            # 🕵️‍♂️ Individual Player Lookup Section (This drives the graph filtering now!)
             st.sidebar.markdown("---")
             st.sidebar.header("🔎 Player Report Search")
             all_unique_players = sorted(df_history["Player Name"].unique())
             search_player = st.sidebar.selectbox("Select a Player to view history:", ["-- View All --"] + all_unique_players)
             
             # -----------------------------------------------------------------
-            # 📈 CHARTS SECTION
+            # 📈 BAR CHART SECTION
             # -----------------------------------------------------------------
             st.subheader("📈 Top 10 Performance Standings (Points)")
             
-            # Grab top 10 point earners from our base point list
             top_10 = base_sorted_leaderboard.head(10).copy()
             
             import altair as alt
             
-            # Points Bar Chart
             points_chart = alt.Chart(top_10).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
                 x=alt.X("Player Name:N", sort="-y", title="Player Name", axis=alt.Axis(labelAngle=-45)),
                 y=alt.Y("Total Points:Q", title="Total Points Accumulated"),
                 color=alt.Color("Total Points:Q", scale=alt.Scale(scheme="viridis"), legend=None),
                 tooltip=["Player Name", "Total Points"]
-            ).properties(height=300)
+            ).properties(height=280)
             
             st.altair_chart(points_chart, use_container_width=True)
             
             # -----------------------------------------------------------------
-            # 📉 WEEKLY POSITION TRACKER LINE GRAPH
+            # 📉 DYNAMIC WEEKLY POSITION TRACKER LINE GRAPH
             # -----------------------------------------------------------------
             st.markdown("---")
             st.subheader("📉 Weekly Finishing Position History")
-            st.markdown("*Track how players fluctuate in placement week by week. Higher lines mean closer to 1st place!*")
             
             if "Date" in df_history.columns and "Position" in df_history.columns:
-                # Sort dates chronologically so line chart goes left-to-right properly
                 df_sorted_dates = df_history.sort_values(by="Date")
                 
-                # Filter down to the Top 10 players to keep the line graph readable
-                top_players_list = list(base_sorted_leaderboard.head(10)["Player Name"])
-                df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"].isin(top_players_list)]
+                # Dynamic Filter Logic based on Sidebar Search Selector
+                if search_player != "-- View All --":
+                    st.markdown(f"*Tracking finishing trends over time for **{search_player}**. Higher points mean closer to 1st place!*")
+                    # Isolated data for just the one picked player
+                    df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"] == search_player]
+                else:
+                    st.markdown("*Displaying the season trajectory of the current **Top 5 League Leaders** to preserve chart clarity. Use the sidebar search tool to isolate individual players.*")
+                    # Default: Show the Top 5 players to keep it scannable
+                    top_5_players = list(base_sorted_leaderboard.head(5)["Player Name"])
+                    df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"].isin(top_5_players)]
                 
+                # Transform data for the line chart mapping
                 pivot_df = df_filtered_tracked.pivot_table(
                     index="Date", 
                     columns="Player Name", 
@@ -121,18 +125,24 @@ try:
                 line_data = pivot_df.reset_index().melt("Date", var_name="Player Name", value_name="Position")
                 line_data = line_data.dropna()
                 
-                position_line_chart = alt.Chart(line_data).mark_line(point=True).encode(
+                # Force position mapping to integers to clear up decimal labels (.0) on the chart axis
+                line_data["Position"] = line_data["Position"].astype(int)
+                
+                position_line_chart = alt.Chart(line_data).mark_line(point=True, strokeWidth=3).encode(
                     x=alt.X("Date:N", title="Game Date"),
-                    y=alt.Y("Position:Q", title="Finishing Place", sort="descending", scale=alt.Scale(domain=[1, int(df_history["Position"].max())])),
+                    y=alt.Y("Position:Q", title="Finishing Place", sort="descending", 
+                          scale=alt.Scale(domain=[1, int(df_history["Position"].max())]),
+                          axis=alt.Axis(tickMinStep=1)), # Restricts chart axis values to whole numbers only
                     color=alt.Color("Player Name:N", title="Players"),
                     tooltip=["Date", "Player Name", "Position"]
-                ).properties(height=400).interactive()
+                ).properties(height=350).interactive()
                 
                 st.altair_chart(position_line_chart, use_container_width=True)
             
             # -----------------------------------------------------------------
             # 🏆 MAIN LEADERBOARD DISPLAY
             # -----------------------------------------------------------------
+            st.markdown("---")
             st.subheader("📋 Overall Season Rankings")
             st.dataframe(leaderboard, use_container_width=True)
             
