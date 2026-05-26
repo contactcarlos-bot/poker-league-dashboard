@@ -6,14 +6,64 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
-st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
-
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-st.error("🚨 **IMPORTANT NOTICE:** Satellite Game Saturday, May 30, 2026 at 4:00pm. Check the qualified roster section at the bottom of the page to see your current eligibility status.")
+st.error("🚨 **IMPORTANT NOTICE:** This Friday is the **FINAL GAME** of the regular season! You must have **8 or more games played** to qualify for Saturday's Satellite Game. Check your eligibility status at the bottom of the page.")
 st.error("🚨 **IMPORTANT NOTICE:** Tournament of Champions Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
 
+# =========================================================================
+# 🔄 SEASON SELECTOR SYSTEM
+# =========================================================================
+# This acts as your control panel. When June 5th hits, just change the default index to 1!
+selected_season = st.selectbox(
+    "🍂 Select League Season:",
+    ["Season XLVII (Current)", "Season XLVIII (Starts June 5)"],
+    index=0
+)
+
+# Map selections to exact Google Sheet tab names
+if "Season XLVIII" in selected_season:
+    TARGET_WORKSHEET = "Form Responses S48"
+    st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVIII")
+else:
+    TARGET_WORKSHEET = "Form Responses 1"
+    st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
+
+# =========================================================================
+# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING (FIXES NAME WRAPPING)
+# =========================================================================
+st.markdown(
+    """
+    <style>
+    /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
+    div[data-testid="stMetricValue"] div, 
+    div[data-testid="stMetricValue"] span {
+        font-size: 1.25rem !important; /* Reduces player name text size */
+        letter-spacing: -0.02em;       /* Narrows space between letters slightly */
+        font-weight: 600 !important;
+    }
+    
+    /* Keeps numbers/static values bold and readable */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.6rem !important;
+        font-weight: 700;
+    }
+    
+    /* Shrinks the smaller bottom metrics labels (e.g., "1600 pts", "Wins") */
+    div[data-testid="stMetricDelta"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Shrinks the top category header emojis & titles */
+    div[data-testid="stMetricLabel"] p {
+        font-size: 0.9rem !important;
+        font-weight: 600;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # =========================================================================
 # CLOUD CONFIGURATION & PLAYER REGISTRY
@@ -55,8 +105,8 @@ def calculate_poker_points(total_players, rank):
     }
     return LEAGUE_MATRIX.get(buy_ins, [100])[rank - 1] if rank <= buy_ins else 100
 
-def get_raw_form_responses():
-    """Connects to Google Sheets and reads the raw form submissions log."""
+def get_raw_form_responses(worksheet_name):
+    """Connects to Google Sheets and reads the selected season tab."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     if "gcp_service_account" in st.secrets:
         creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
@@ -65,15 +115,19 @@ def get_raw_form_responses():
     
     client = gspread.authorize(creds)
     workbook = client.open("Dirty Town Poker League Input (Responses)")
-    sheet = workbook.worksheet("Form Responses 1")
+    sheet = workbook.worksheet(worksheet_name)
     return sheet.get_all_values()
 
 try:
-    raw_rows = get_raw_form_responses()
+    raw_rows = get_raw_form_responses(TARGET_WORKSHEET)
     cleaned_rows = [r for r in raw_rows if any(cell.strip() for cell in r)]
     
     if len(cleaned_rows) <= 1:
-        st.warning("No submissions found in your Google Form yet!")
+        st.warning(f"No submissions found in your Google Form for {selected_season} yet!")
+        leaderboard = pd.DataFrame(columns=["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"])
+        df_history = pd.DataFrame(columns=["Date", "Player Name", "Position", "Points"])
+        base_sorted_leaderboard = leaderboard
+        last_game_date = None
     else:
         parsed_history_records = []
         
@@ -147,9 +201,6 @@ try:
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         
         # -----------------------------------------------------------------
-        # MILESTONES CARD SHELF
-        # -----------------------------------------------------------------
-        # -----------------------------------------------------------------
         # SPICED-UP METRICS SHELF (Upgraded to 4 Columns)
         # -----------------------------------------------------------------
         if not base_sorted_leaderboard.empty:
@@ -172,14 +223,36 @@ try:
                 st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
             with m_col4:
                 st.metric("Commissioner 👑", "Michael Craft", "League Admin")
-                
-        search_player_placeholder = "-- View All --"
-        if "search_player_value" in st.session_state:
-            search_player_placeholder = st.session_state["search_player_value"]
 
-        # -----------------------------------------------------------------
-        # 🏆 SEASON STANDINGS LEADERBOARD
-        # -----------------------------------------------------------------
+    # =========================================================================
+    # 🏅 POST-SEASON TOURNAMENT TRACKER (Only displays for Season XLVII)
+    # =========================================================================
+    if "Season XLVII" in selected_season:
+        st.markdown("---")
+        st.subheader("🏁 Post-Season Championship Series Bracket")
+        
+        b_col1, b_col2 = st.columns(2)
+        with b_col1:
+            # 📝 Update these lines manually once the Saturday Satellite finishes!
+            st.info("""
+            **🛰️ Saturday Satellite Match**
+            * **Status:** Scheduled (May 30 @ 4:00pm)
+            * **Current Winner:** *TBD* 
+            * **Reward:** Advances directly into TOC as Seed #10
+            """)
+        with b_col2:
+            # 📝 Update these lines manually once the Tournament of Champions finishes next Sunday!
+            st.success("""
+            **👑 Tournament of Champions**
+            * **Status:** Scheduled (June 6 @ 1:00pm)
+            * **Season XLVII Champion:** *TBD* 🏆
+            * **Runner Up:** *TBD* 🥈
+            """)
+                
+    # -----------------------------------------------------------------
+    # 🏆 SEASON STANDINGS LEADERBOARD
+    # -----------------------------------------------------------------
+    if not base_sorted_leaderboard.empty:
         st.markdown("---")
         st.subheader("📋 Overall Season Rankings")
         
@@ -202,12 +275,17 @@ try:
             
         st.dataframe(styled_df, use_container_width=True)
         
-        # -----------------------------------------------------------------
-        # ⚙️ DASHBOARD CONTROLS
-        # -----------------------------------------------------------------
+    # -----------------------------------------------------------------
+    # ⚙️ DASHBOARD CONTROLS
+    # -----------------------------------------------------------------
+    if not df_history.empty and last_game_date:
         st.markdown("---")
         st.markdown("### ⚙️ Dashboard Controls")
         
+        search_player_placeholder = "-- View All --"
+        if "search_player_value" in st.session_state:
+            search_player_placeholder = st.session_state["search_player_value"]
+
         all_unique_players = sorted(df_history["Player Name"].unique())
         search_player = st.selectbox(
             "🔎 Player Report Search:", 
@@ -236,9 +314,10 @@ try:
             with st.expander("🔍 View All Game-by-Game History Logs"):
                 st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], use_container_width=True, hide_index=True)
 
-        # -----------------------------------------------------------------
-        # 🃏 SATELLITE GAME QUALIFIED PLAYERS
-        # -----------------------------------------------------------------
+    # -----------------------------------------------------------------
+    # 🃏 SATELLITE GAME QUALIFIED PLAYERS (Only displays for Season XLVII)
+    # -----------------------------------------------------------------
+    if "Season XLVII" in selected_season and not leaderboard.empty:
         st.markdown("---")
         st.subheader("🃏 Satellite Game Qualified Players")
         st.markdown("*Players with **8 or more games played** who are currently ranked **10th place or lower (11th, 12th, etc.)**.*")
@@ -248,7 +327,7 @@ try:
         # Shift index to start at 1 to match official ranking positions
         df_sat_check.index = df_sat_check.index + 1 
         
-        # Filter: Games Played >= 8 AND Rank (Index) >= 11 (Targets 11th, 12th, etc.)
+        # Filter: Games Played >= 8 AND Rank (Index) >= 11 (Targets 11th, 12th, etc.)[cite: 2]
         df_satellite_qualified = df_sat_check[
             (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 10)
         ].copy()
@@ -351,13 +430,12 @@ try:
             st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
             st.altair_chart(bubble_chart, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
-        # -----------------------------------------------------------------
-        # 🛡️ LEAGUE INFO FOOTER 
-        # -----------------------------------------------------------------
-        st.markdown("---")
-        #st.info("📋 **League Notice:** Satellite Game (Saturday, May 30, 2026 at 4:00pm. You need 8 Games to qualify.")
-        #st.info("📋 **League Notice:** **Tournament of Champions** Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
-        st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Miguel Craft** 🙉")
+
+    # -----------------------------------------------------------------
+    # 🛡️ LEAGUE INFO FOOTER 
+    # -----------------------------------------------------------------
+    st.markdown("---")
+    st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Miguel Craft** 🙉")
 
 except Exception as e:
     st.error(f"Could not load league data: {e}")
