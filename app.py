@@ -384,7 +384,7 @@ try:
             col2.metric("Games Tracked", int(player_df["Date"].count()))
             
             # Recalculate local final table matches cleanly
-            ft_count_local = sum(1 for p in player_df["Position"] if p <= 11)
+            ft_count_local = sum(1 for p in player_df["Position"] if p <=6)
             col3.metric("Final Tables", ft_count_local)
             st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
         else:
