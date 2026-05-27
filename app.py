@@ -280,7 +280,7 @@ try:
                     prize_text = "Prize Logged"
                 
                 lookup_key = input_name.lower()
-                player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())[cite: 2]
+                player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())
                 high_hand_records.append({"Player Name": player_name, "Prize Won": prize_text})
                 
             # Process Spin The Wheel Column (Column 5 in your sheet)
@@ -295,7 +295,7 @@ try:
                     prize_text = "Prize Logged"
                 
                 lookup_key = input_name.lower()
-                player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())[cite: 2]
+                player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())
                 spin_wheel_records.append({"Player Name": player_name, "Prize Won": prize_text})
                 
         w_col1, w_col2 = st.columns(2)
@@ -394,7 +394,7 @@ try:
         # Shift index to start at 1 to match official ranking positions
         df_sat_check.index = df_sat_check.index + 1 
         
-        # Filter: Games Played >= 8 AND Rank (Index) >= 10 (Targets 10th, 11th, 12th, etc.)[cite: 2]
+        # Filter: Games Played >= 8 AND Rank (Index) >= 10 (Targets 10th, 11th, 12th, etc.)
         df_satellite_qualified = df_sat_check[
             (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 10)
         ].copy()
