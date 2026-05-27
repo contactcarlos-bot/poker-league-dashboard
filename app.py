@@ -15,7 +15,6 @@ st.error("🚨 **IMPORTANT NOTICE:** Tournament of Champions Will Be Played on S
 # =========================================================================
 # 🔄 SEASON SELECTOR SYSTEM
 # =========================================================================
-# This acts as your control panel. When June 5th hits, just change the default index to 1!
 selected_season = st.selectbox(
     "🍂 Select League Season:",
     ["Season XLVII (Current)", "Season XLVIII (Starts June 5)"],
@@ -47,47 +46,6 @@ st.markdown(
     .viewerBadge {display: none !important;}
     div[data-testid="stViewerBadge"] {display: none !important;}
     button[title="View source on GitHub"] {display: none !important;}
-    
-    /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
-    div[data-testid="stMetricValue"] div, 
-    div[data-testid="stMetricValue"] span {
-        font-size: 1.25rem !important;
-        letter-spacing: -0.02em;
-        font-weight: 600 !important;
-    }
-    
-    /* Keeps numbers/static values bold and readable */
-    div[data-testid="stMetricValue"] {
-        font-size: 1.6rem !important;
-        font-weight: 700;
-    }
-    
-    /* Shrinks the smaller bottom metrics labels (e.g., "1600 pts", "Wins") */
-    div[data-testid="stMetricDelta"] {
-        font-size: 0.85rem !important;
-    }
-    
-    /* Shrinks the top category header emojis & titles */
-    div[data-testid="stMetricLabel"] p {
-        font-size: 0.9rem !important;
-        font-weight: 600;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# =========================================================================
-# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
-# =========================================================================
-st.markdown(
-    """
-    <style>
-    /* 🛡️ HIDES STREAMLIT BRANDING, PROFILE LINKS, AND GITHUB CODE SHORCUTS */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    div[data-testid="stDecoration"] {display: none;}
     
     /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
     div[data-testid="stMetricValue"] div, 
@@ -299,8 +257,9 @@ try:
             * **Season XLVII Champion:** *TBD* 🏆
             * **Runner Up:** *TBD* 🥈
             """)
+            
         # =========================================================================
-        # 🃏 NEW: NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION & PRIZES)
+        # 🃏 NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION & PRIZES)
         # =========================================================================
         st.markdown("---")
         st.subheader("🎉 Nightly Specials & Special Bounties")
@@ -312,7 +271,6 @@ try:
             # Process High Hand Column (Column 4 in your sheet)
             if len(row) >= 4 and row[3].strip():
                 raw_text = row[3].strip()
-                # Split by hyphen if a prize is noted next to the name
                 if "-" in raw_text:
                     parts = raw_text.split("-", 1)
                     input_name = parts[0].strip()
@@ -328,7 +286,6 @@ try:
             # Process Spin The Wheel Column (Column 5 in your sheet)
             if len(row) >= 5 and row[4].strip():
                 raw_text = row[4].strip()
-                # Split by hyphen if a prize is noted next to the name
                 if "-" in raw_text:
                     parts = raw_text.split("-", 1)
                     input_name = parts[0].strip()
@@ -385,7 +342,6 @@ try:
             
         st.dataframe(styled_df, use_container_width=True)
         
-    
     # -----------------------------------------------------------------
     # ⚙️ DASHBOARD CONTROLS
     # -----------------------------------------------------------------
@@ -431,14 +387,14 @@ try:
     if "Season XLVII" in selected_season and not leaderboard.empty:
         st.markdown("---")
         st.subheader("🃏 Satellite Game Qualified Players")
-        st.markdown("*Players with **8 or more games played** who are currently ranked **10th place or lower (11th, 12th, etc.)**.*")
+        st.markdown("*Players with **8 or more games played** who are currently ranked **10th place or lower (10th, 11th, 12th, etc.)**.*")
 
         # Create a copy of the overall sorted rankings to check exact placements
         df_sat_check = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
         # Shift index to start at 1 to match official ranking positions
         df_sat_check.index = df_sat_check.index + 1 
         
-        # Filter: Games Played >= 8 AND Rank (Index) >= 11 (Targets 11th, 12th, etc.)[cite: 2]
+        # Filter: Games Played >= 8 AND Rank (Index) >= 10 (Targets 10th, 11th, 12th, etc.)[cite: 2]
         df_satellite_qualified = df_sat_check[
             (df_sat_check["Games Played"] >= 8) & (df_sat_check.index >= 10)
         ].copy()
@@ -520,7 +476,6 @@ try:
         st.subheader("🔮 League Activity vs Efficiency Matrix")
         st.markdown("*Bubble Size represents **Average Points Per Game**. Sharks stay high up on small game samples; Grinders stack points over max attendance.*")
         
-        # FIX: Padding limits added to the domain ranges prevents circle clipping on axes borders
         min_games, max_games_track = int(leaderboard["Games Played"].min()), int(leaderboard["Games Played"].max())
         min_pts, max_pts_track = int(leaderboard["Total Points"].min()), int(leaderboard["Total Points"].max())
 
