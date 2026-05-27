@@ -64,6 +64,46 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+# =========================================================================
+# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
+# =========================================================================
+st.markdown(
+    """
+    <style>
+    /* 🛡️ HIDES STREAMLIT BRANDING, PROFILE LINKS, AND GITHUB CODE SHORCUTS */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    div[data-testid="stDecoration"] {display: none;}
+    
+    /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
+    div[data-testid="stMetricValue"] div, 
+    div[data-testid="stMetricValue"] span {
+        font-size: 1.25rem !important;
+        letter-spacing: -0.02em;
+        font-weight: 600 !important;
+    }
+    
+    /* Keeps numbers/static values bold and readable */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.6rem !important;
+        font-weight: 700;
+    }
+    
+    /* Shrinks the smaller bottom metrics labels (e.g., "1600 pts", "Wins") */
+    div[data-testid="stMetricDelta"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Shrinks the top category header emojis & titles */
+    div[data-testid="stMetricLabel"] p {
+        font-size: 0.9rem !important;
+        font-weight: 600;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # =========================================================================
 # CLOUD CONFIGURATION & PLAYER REGISTRY
