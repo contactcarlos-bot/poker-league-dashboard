@@ -199,7 +199,7 @@ try:
         df_history["🥇 1st"] = df_history["Position"].apply(lambda x: 1 if x == 1 else 0)
         df_history["🥈 2nd"] = df_history["Position"].apply(lambda x: 1 if x == 2 else 0)
         df_history["🥉 3rd"] = df_history["Position"].apply(lambda x: 1 if x == 3 else 0)
-        df_history["FT"] = df_history["Position"].apply(lambda x: 1 if x <= 6 else 0)
+        df_history["FT"] = df_history["Position"].apply(lambda x: 1 if x <= 10 else 0)
         
         leaderboard = df_history.groupby("Player Name").agg(
             Total_Points=("Points", "sum"),
@@ -384,7 +384,7 @@ try:
             col2.metric("Games Tracked", int(player_df["Date"].count()))
             
             # Recalculate local final table matches cleanly
-            ft_count_local = sum(1 for p in player_df["Position"] if p <=6)
+            ft_count_local = sum(1 for p in player_df["Position"] if p <=10)
             col3.metric("Final Tables", ft_count_local)
             st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
         else:
