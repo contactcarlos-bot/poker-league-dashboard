@@ -31,16 +31,28 @@ else:
     st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
 
 # =========================================================================
-# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING (FIXES NAME WRAPPING)
+# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
 # =========================================================================
 st.markdown(
     """
     <style>
+    /* 🛡️ COMPLETELY VAPORIZES H hamburger menu, DEPLOY, FOOTERS, AND HOSTED BADGES */
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    header {visibility: hidden !important;}
+    .stDeployButton {display: none !important;}
+    div[data-testid="stDecoration"] {display: none !important;}
+    
+    /* 🎯 TARGETS AND DELETES THE BOTTOM RIGHT 'HOSTED WITH STREAMLIT' FLOATING ACTION BADGE */
+    .viewerBadge {display: none !important;}
+    div[data-testid="stViewerBadge"] {display: none !important;}
+    button[title="View source on GitHub"] {display: none !important;}
+    
     /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
     div[data-testid="stMetricValue"] div, 
     div[data-testid="stMetricValue"] span {
-        font-size: 1.25rem !important; /* Reduces player name text size */
-        letter-spacing: -0.02em;       /* Narrows space between letters slightly */
+        font-size: 1.25rem !important;
+        letter-spacing: -0.02em;
         font-weight: 600 !important;
     }
     
@@ -63,6 +75,7 @@ st.markdown(
     </style>
     """,
     unsafe_allow_html=True
+)
 )
 # =========================================================================
 # 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
