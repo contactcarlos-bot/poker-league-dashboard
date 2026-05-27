@@ -1,1 +1,1 @@
-My poker league score updater. Nothing fancy.
+My poker league score updater.
