@@ -47,6 +47,13 @@ st.markdown(
     div[data-testid="stViewerBadge"] {display: none !important;}
     button[title="View source on GitHub"] {display: none !important;}
     
+    /* 📊 REDUCES DATAFRAME TEXT SIZE (SHRINKS BOUNTY LOG TABLES) */
+    div[data-testid="stDataFrame"] td, 
+    div[data-testid="stDataFrame"] th,
+    div[data-testid="stDataFrame"] div {
+        font-size: 0.85rem !important;
+    }
+    
     /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
     div[data-testid="stMetricValue"] div, 
     div[data-testid="stMetricValue"] span {
