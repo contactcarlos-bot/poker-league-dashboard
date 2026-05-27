@@ -278,7 +278,7 @@ try:
                 st.metric("Commissioner 👑", "Michael Craft", "League Admin")
 
     # =========================================================================
-    # 🏅 POST-SEASON TOURNAMENT TRACKER (Only displays for Season XLVII)
+    # 🏅 POST-SEASON TOURNAMENT TRACKER
     # =========================================================================
     if "Season XLVII" in selected_season:
         st.markdown("---")
@@ -286,21 +286,54 @@ try:
         
         b_col1, b_col2 = st.columns(2)
         with b_col1:
-            # 📝 Update these lines manually once the Saturday Satellite finishes!
             st.info("""
             **🛰️ Saturday Satellite Match**
-            * **Status:** Scheduled May 30 @ 4:00pm
+            * **Status:** Scheduled (May 30 @ 4:00pm)
             * **Current Winner:** *TBD* 
             * **Reward:** Advances directly into TOC as Seed #10
             """)
         with b_col2:
-            # 📝 Update these lines manually once the Tournament of Champions finishes next Sunday!
             st.success("""
             **👑 Tournament of Champions**
-            * **Status:** Scheduled June 6 @ 1:00PM (Lunch @ 12:15PM)
+            * **Status:** Scheduled (June 6 @ 1:00pm)
             * **Season XLVII Champion:** *TBD* 🏆
             * **Runner Up:** *TBD* 🥈
             """)
+
+        # =========================================================================
+        # 🃏 NEW: NIGHTLY BOUNTIES & WILDCARDS (HIGH HAND & SPIN THE WHEEL)
+        # =========================================================================
+        st.markdown("---")
+        st.subheader("🎉 Nightly Specials & Special Bounties")
+        
+        # Pull columns safely if they exist in your raw sheet (assuming columns 4 and 5)
+        # Adjusted dynamically based on data framework array boundaries
+        high_hand_list = []
+        spin_wheel_list = []
+        
+        for row in cleaned_rows[1:]:
+            if len(row) >= 4 and row[3].strip():  # High Hand Column
+                high_hand_list.append(row[3].strip().title())
+            if len(row) >= 5 and row[4].strip():  # Spin The Wheel Column
+                spin_wheel_list.append(row[4].strip().title())
+                
+        w_col1, w_col2 = st.columns(2)
+        
+        with w_col1:
+            st.markdown("### 🪵 High Hand Elite")
+            if high_hand_list:
+                df_hh = pd.DataFrame(high_hand_list, columns=["Player Name"]).value_counts().reset_index(name="Total Wins")
+                st.dataframe(df_hh, use_container_width=True, hide_index=True)
+            else:
+                st.info("No High Hand records logged yet for this season.")
+                
+        with w_col2:
+            st.markdown("### 🎡 Ace of Spades Wheel Spins")
+            if spin_wheel_list:
+                df_sw = pd.DataFrame(spin_wheel_list, columns=["Player Name"]).value_counts().reset_index(name="Total Spins")
+                st.dataframe(df_sw, use_container_width=True, hide_index=True)
+            else:
+                st.info("No Spade Ace wheel draws tracked yet for this season.")
                 
     # -----------------------------------------------------------------
     # 🏆 SEASON STANDINGS LEADERBOARD
