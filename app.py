@@ -284,10 +284,11 @@ try:
         def highlight_low_attendance(val):
             return 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;' if val <= 7 else ''
 
-        # Chain both mapping operations onto the styling pipeline
+        # Chain mapping operations AND add the center alignment properties
         styled_df = final_table_df.style\
             .map(highlight_last_game, subset=["Last Game Points"])\
-            .map(highlight_low_attendance, subset=["Games Played"])
+            .map(highlight_low_attendance, subset=["Games Played"])\
+            .set_properties(**{'text-align': 'center'}, subset=["🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"])
             
         st.dataframe(styled_df, use_container_width=True)
 
