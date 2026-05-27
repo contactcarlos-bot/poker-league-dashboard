@@ -299,33 +299,6 @@ try:
             * **Season XLVII Champion:** *TBD* 🏆
             * **Runner Up:** *TBD* 🥈
             """)
-
-
-    # -----------------------------------------------------------------
-    # 🏆 SEASON STANDINGS LEADERBOARD
-    # -----------------------------------------------------------------
-    if not base_sorted_leaderboard.empty:
-        st.markdown("---")
-        st.subheader("📋 Overall Season Rankings")
-        
-        display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
-        display_leaderboard.index = display_leaderboard.index + 1
-        
-        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"]]
-
-        # Custom highlighters for green (points won) and red (low attendance)
-        def highlight_last_game(val):
-            return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
-
-        def highlight_low_attendance(val):
-            return 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;' if val <= 7 else ''
-
-        # Chain both mapping operations onto the styling pipeline
-        styled_df = final_table_df.style\
-            .map(highlight_last_game, subset=["Last Game Points"])\
-            .map(highlight_low_attendance, subset=["Games Played"])
-            
-        st.dataframe(styled_df, use_container_width=True)
         # =========================================================================
         # 🃏 NEW: NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION & PRIZES)
         # =========================================================================
@@ -385,6 +358,33 @@ try:
                 st.dataframe(df_sw, use_container_width=True, hide_index=True)
             else:
                 st.info("No Spade Ace wheel draws tracked yet for this season.")
+
+    # -----------------------------------------------------------------
+    # 🏆 SEASON STANDINGS LEADERBOARD
+    # -----------------------------------------------------------------
+    if not base_sorted_leaderboard.empty:
+        st.markdown("---")
+        st.subheader("📋 Overall Season Rankings")
+        
+        display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
+        display_leaderboard.index = display_leaderboard.index + 1
+        
+        final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"]]
+
+        # Custom highlighters for green (points won) and red (low attendance)
+        def highlight_last_game(val):
+            return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
+
+        def highlight_low_attendance(val):
+            return 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;' if val <= 7 else ''
+
+        # Chain both mapping operations onto the styling pipeline
+        styled_df = final_table_df.style\
+            .map(highlight_last_game, subset=["Last Game Points"])\
+            .map(highlight_low_attendance, subset=["Games Played"])
+            
+        st.dataframe(styled_df, use_container_width=True)
+        
     
     # -----------------------------------------------------------------
     # ⚙️ DASHBOARD CONTROLS
