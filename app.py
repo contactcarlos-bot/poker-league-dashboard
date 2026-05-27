@@ -309,7 +309,7 @@ try:
                 st.info("No High Hand records logged yet for this season.")
                 
         with w_col2:
-            st.markdown("### 🎡 Ace Wheel Spins")
+            st.markdown("### ♠️Ace Wheel Spins")
             if spin_wheel_records:
                 df_sw = pd.DataFrame(spin_wheel_records)
                 st.dataframe(df_sw, use_container_width=True, hide_index=True)
