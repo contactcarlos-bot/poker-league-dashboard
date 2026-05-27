@@ -284,13 +284,23 @@ try:
         def highlight_low_attendance(val):
             return 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;' if val <= 7 else ''
 
-        # Chain mapping operations AND add the center alignment properties
+        # Chain both mapping operations onto the styling pipeline
         styled_df = final_table_df.style\
             .map(highlight_last_game, subset=["Last Game Points"])\
-            .map(highlight_low_attendance, subset=["Games Played"])\
-            .set_properties(**{'text-align': 'center'}, subset=["🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"])
+            .map(highlight_low_attendance, subset=["Games Played"])
             
-        st.dataframe(styled_df, use_container_width=True)
+        # 🎯 FORCE CENTER ALIGNMENT VIA STREAMLIT COLUMN CONFIG
+        st.dataframe(
+            styled_df, 
+            use_container_width=True,
+            column_config={
+                "🥇 1st": st.column_config.NumberColumn(alignment="center"),
+                "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
+                "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
+                "Final Tables": st.column_config.NumberColumn(alignment="center"),
+                "Games Played": st.column_config.NumberColumn(alignment="center") # Centered this too for symmetry!
+            }
+        )
 
     # =========================================================================
     # 🎉 NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION, PRIZES & DATES)
