@@ -300,41 +300,7 @@ try:
             * **Runner Up:** *TBD* 🥈
             """)
 
-        # =========================================================================
-        # 🃏 NEW: NIGHTLY BOUNTIES & WILDCARDS (HIGH HAND & SPIN THE WHEEL)
-        # =========================================================================
-        st.markdown("---")
-        st.subheader("🎉 Nightly Specials & Special Bounties")
-        
-        # Pull columns safely if they exist in your raw sheet (assuming columns 4 and 5)
-        # Adjusted dynamically based on data framework array boundaries
-        high_hand_list = []
-        spin_wheel_list = []
-        
-        for row in cleaned_rows[1:]:
-            if len(row) >= 4 and row[3].strip():  # High Hand Column
-                high_hand_list.append(row[3].strip().title())
-            if len(row) >= 5 and row[4].strip():  # Spin The Wheel Column
-                spin_wheel_list.append(row[4].strip().title())
-                
-        w_col1, w_col2 = st.columns(2)
-        
-        with w_col1:
-            st.markdown("### 🪵 High Hand Elite")
-            if high_hand_list:
-                df_hh = pd.DataFrame(high_hand_list, columns=["Player Name"]).value_counts().reset_index(name="Total Wins")
-                st.dataframe(df_hh, use_container_width=True, hide_index=True)
-            else:
-                st.info("No High Hand records logged yet for this season.")
-                
-        with w_col2:
-            st.markdown("### 🎡 Ace of Spades Wheel Spins")
-            if spin_wheel_list:
-                df_sw = pd.DataFrame(spin_wheel_list, columns=["Player Name"]).value_counts().reset_index(name="Total Spins")
-                st.dataframe(df_sw, use_container_width=True, hide_index=True)
-            else:
-                st.info("No Spade Ace wheel draws tracked yet for this season.")
-                
+
     # -----------------------------------------------------------------
     # 🏆 SEASON STANDINGS LEADERBOARD
     # -----------------------------------------------------------------
@@ -360,7 +326,66 @@ try:
             .map(highlight_low_attendance, subset=["Games Played"])
             
         st.dataframe(styled_df, use_container_width=True)
+        # =========================================================================
+        # 🃏 NEW: NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION & PRIZES)
+        # =========================================================================
+        st.markdown("---")
+        st.subheader("🎉 Nightly Specials & Special Bounties")
         
+        high_hand_records = []
+        spin_wheel_records = []
+        
+        for row in cleaned_rows[1:]:
+            # Process High Hand Column (Column 4 in your sheet)
+            if len(row) >= 4 and row[3].strip():
+                raw_text = row[3].strip()
+                # Split by hyphen if a prize is noted next to the name
+                if "-" in raw_text:
+                    parts = raw_text.split("-", 1)
+                    input_name = parts[0].strip()
+                    prize_text = parts[1].strip()
+                else:
+                    input_name = raw_text
+                    prize_text = "Prize Logged"
+                
+                lookup_key = input_name.lower()
+                player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())[cite: 2]
+                high_hand_records.append({"Player Name": player_name, "Prize Won": prize_text})
+                
+            # Process Spin The Wheel Column (Column 5 in your sheet)
+            if len(row) >= 5 and row[4].strip():
+                raw_text = row[4].strip()
+                # Split by hyphen if a prize is noted next to the name
+                if "-" in raw_text:
+                    parts = raw_text.split("-", 1)
+                    input_name = parts[0].strip()
+                    prize_text = parts[1].strip()
+                else:
+                    input_name = raw_text
+                    prize_text = "Prize Logged"
+                
+                lookup_key = input_name.lower()
+                player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())[cite: 2]
+                spin_wheel_records.append({"Player Name": player_name, "Prize Won": prize_text})
+                
+        w_col1, w_col2 = st.columns(2)
+        
+        with w_col1:
+            st.markdown("### 🪵 High Hand Elite Logs")
+            if high_hand_records:
+                df_hh = pd.DataFrame(high_hand_records)
+                st.dataframe(df_hh, use_container_width=True, hide_index=True)
+            else:
+                st.info("No High Hand records logged yet for this season.")
+                
+        with w_col2:
+            st.markdown("### 🎡 Ace of Spades Wheel Spins")
+            if spin_wheel_records:
+                df_sw = pd.DataFrame(spin_wheel_records)
+                st.dataframe(df_sw, use_container_width=True, hide_index=True)
+            else:
+                st.info("No Spade Ace wheel draws tracked yet for this season.")
+    
     # -----------------------------------------------------------------
     # ⚙️ DASHBOARD CONTROLS
     # -----------------------------------------------------------------
