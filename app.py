@@ -9,7 +9,6 @@ st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layou
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-st.error("🚨 **IMPORTANT NOTICE:** This Friday is the **FINAL GAME** of the regular season! You must have **8 or more games played** to qualify for Saturday's Satellite Game. Check your eligibility status at the bottom of the page.")
 st.error("🚨 **IMPORTANT NOTICE:** Tournament of Champions Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
 
 # =========================================================================
