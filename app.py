@@ -23,10 +23,10 @@ selected_season = st.selectbox(
 # Map selections to exact Google Sheet tab names
 if "Season XLVIII" in selected_season:
     TARGET_WORKSHEET = "Form Responses S48"
-    st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVIII")
+    st.title("🏆 Dirty Town Poker League - Season XLVIII")
 else:
     TARGET_WORKSHEET = "Form Responses 1"
-    st.title("🏆 Dirty Town Poker League Leaderboard - Season XLVII")
+    st.title("🏆 Dirty Town Poker League - Season XLVII")
 
 # =========================================================================
 # 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
