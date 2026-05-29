@@ -7,6 +7,27 @@ from oauth2client.service_account import ServiceAccountCredentials
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
 # =========================================================================
+# 🪓 JAVASCRIPT INJECTION: BREAKS IFRAME TO REMOVE FLOATING TOOLBARS
+# =========================================================================
+from streamlit.components.v1 import html
+html(
+    """
+    <script>
+    const parentDoc = window.parent.document;
+    document.addEventListener("DOMContentLoaded", function() {
+        parentDoc.querySelectorAll('[href*="streamlit.io"]').forEach(el => {
+            const container = el.closest('div');
+            if (container) container.style.display = 'none';
+        });
+        const viewerBadges = parentDoc.querySelectorAll('.viewerBadge, [data-testid="stViewerBadge"]');
+        viewerBadges.forEach(badge => badge.style.display = 'none');
+    });
+    </script>
+    """,
+    height=0, width=0
+)
+
+# =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
 st.error("🚨 **IMPORTANT NOTICE:** Tournament of Champions Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
@@ -125,6 +146,7 @@ def calculate_poker_points(total_players, rank):
     }
     return LEAGUE_MATRIX.get(buy_ins, [100])[rank - 1] if rank <= buy_ins else 100
 
+@st.cache_data(ttl=600)  # ⏱️ Caches your spreadsheet data for 10 minutes to run lightning-fast
 def get_raw_form_responses(worksheet_name):
     """Connects to Google Sheets and reads the selected season tab."""
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -137,6 +159,11 @@ def get_raw_form_responses(worksheet_name):
     workbook = client.open("Dirty Town Poker League Input (Responses)")
     sheet = workbook.worksheet(worksheet_name)
     return sheet.get_all_values()
+
+# Cache-breaking sync button right below the title
+if st.button("🔄 Sync Live Data Response Updates"):
+    st.cache_data.clear()
+    st.rerun()
 
 try:
     raw_rows = get_raw_form_responses(TARGET_WORKSHEET)
@@ -173,7 +200,7 @@ try:
                     
                 points = calculate_poker_points(total_players, position)
                 
-                lookup_key = raw_player_input.strip().lower()
+                lookup_key = raw_player_input.strip().replace(" ", "").lower()
                 player_name = PLAYER_REGISTRY.get(lookup_key, raw_player_input.strip().title())
                 
                 parsed_history_records.append({
@@ -197,7 +224,7 @@ try:
         else:
             df_last_game = pd.DataFrame(columns=["Player Name", "Last Game Points"])
 
-        # Track granular finish classes
+        # Track granular finish classes (Locks Final Table at top 10 finishers or less)
         df_history["🥇 1st"] = df_history["Position"].apply(lambda x: 1 if x == 1 else 0)
         df_history["🥈 2nd"] = df_history["Position"].apply(lambda x: 1 if x == 2 else 0)
         df_history["🥉 3rd"] = df_history["Position"].apply(lambda x: 1 if x == 3 else 0)
@@ -256,8 +283,7 @@ try:
             st.info("""
             **🛰️ Saturday Satellite Match**
             * **Status:** Scheduled (May 30 @ 4:00pm)
-            * **Current Winner:** *TBD* 
-            * **Reward:** Advances directly into TOC as Seed #10
+            * **Current Winner:** *TBD* * **Reward:** Advances directly into TOC as Seed #10
             """)
         with b_col2:
             st.success("""
@@ -291,24 +317,24 @@ try:
             .map(highlight_last_game, subset=["Last Game Points"])\
             .map(highlight_low_attendance, subset=["Games Played"])
             
-        # 🎯 FORCE CENTER ALIGNMENT VIA STREAMLIT COLUMN CONFIG
-    st.dataframe(
-        styled_df, 
-        use_container_width=True,
-        hide_index=False,  # Shows clean rank numbers (1, 2, 3...) on the left margin
-        column_config={
-            "Player Name": st.column_config.TextColumn("♠️ Player"),
-            "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
-            "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
-            "🥇 1st": st.column_config.NumberColumn(alignment="center"),
-            "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
-            "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
-            "Final Tables": st.column_config.NumberColumn("🃏 Final Tables", alignment="center"),
-            "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", alignment="center")
-        }
-)
+        # 🎯 FIX INDENTATION: Safely nested inside active dataset condition block
+        st.dataframe(
+            styled_df, 
+            use_container_width=True,
+            hide_index=False,
+            column_config={
+                "Player Name": st.column_config.TextColumn("♠️ Player"),
+                "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
+                "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
+                "🥇 1st": st.column_config.NumberColumn(alignment="center"),
+                "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
+                "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
+                "Final Tables": st.column_config.NumberColumn("🃏 Final Tables", alignment="center"),
+                "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", alignment="center")
+            }
+        )
 
-# =========================================================================
+    # =========================================================================
     # 🎉 NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION, PRIZES & DATES)
     # =========================================================================
     st.markdown("---")
@@ -332,7 +358,7 @@ try:
                 input_name = raw_text
                 prize_text = "Prize Logged"
             
-            lookup_key = input_name.lower()
+            lookup_key = input_name.lower().strip()
             player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())
             high_hand_records.append({"Date": game_date, "Player Name": player_name, "Prize Won": prize_text})
             
@@ -347,7 +373,7 @@ try:
                 input_name = raw_text
                 prize_text = "Prize Logged"
             
-            lookup_key = input_name.lower()
+            lookup_key = input_name.lower().strip()
             player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())
             spin_wheel_records.append({"Date": game_date, "Player Name": player_name, "Prize Won": prize_text})
             
@@ -368,6 +394,7 @@ try:
             st.dataframe(df_sw, use_container_width=True, hide_index=True)
         else:
             st.info("No Spade Ace wheel draws tracked yet for this season.")
+
     # -----------------------------------------------------------------
     # ⚙️ DASHBOARD CONTROLS
     # -----------------------------------------------------------------
@@ -400,7 +427,7 @@ try:
             col2.metric("Games Tracked", int(player_df["Date"].count()))
             
             # Recalculate local final table matches cleanly
-            ft_count_local = sum(1 for p in player_df["Position"] if p <=10)
+            ft_count_local = sum(1 for p in player_df["Position"] if p <= 10)
             col3.metric("Final Tables", ft_count_local)
             st.dataframe(player_df.sort_values(by="Date", ascending=False)[["Date", "Position", "Points"]], use_container_width=True, hide_index=True)
         else:
@@ -417,7 +444,6 @@ try:
 
         # Create a copy of the overall sorted rankings to check exact placements
         df_sat_check = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
-        # Shift index to start at 1 to match official ranking positions
         df_sat_check.index = df_sat_check.index + 1 
         
         # Filter: Games Played >= 8 AND Rank (Index) >= 10 (Targets 10th, 11th, 12th, etc.)
@@ -428,15 +454,12 @@ try:
         if df_satellite_qualified.empty:
             st.info("No players currently meet the qualification criteria for the Satellite Game.")
         else:
-            # Insert the actual Season Rank as a clean visible column
             df_satellite_qualified["Season Rank"] = df_satellite_qualified.index
             
-            # Reset the dataframe index and shift by 1 to create a clean sequential list numbering (1, 2, 3...)
             df_satellite_qualified = df_satellite_qualified.reset_index(drop=True)
             df_satellite_qualified.index = df_satellite_qualified.index + 1
             df_satellite_qualified["#"] = df_satellite_qualified.index
             
-            # Reorder columns to put the list number first
             sat_display_df = df_satellite_qualified[["#", "Season Rank", "Player Name", "Games Played", "Total Points"]]
             
             with st.container():
@@ -486,7 +509,6 @@ try:
         points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
             x=alt.X("Player Name:N", sort="-y", title="", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("Total Points:Q", title=""),
-            # Inside your points_chart definition:
             color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
             tooltip=["Player Name", "Total Points"]
         ).properties(height=260)
