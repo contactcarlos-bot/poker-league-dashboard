@@ -515,7 +515,7 @@ try:
                     title="Total Points Accumulated",
                     scale=alt.Scale(domain=[max(0, min_pts - 500), max_pts_track + 1000])),
             size=alt.Size("Avg Points/Game:Q", title="Efficiency", scale=alt.Scale(range=[100, 1000])),
-            color=alt.Color("Player Name:N", title="Player", legend=None),
+            color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
             tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
         ).properties(height=340).interactive()
         
