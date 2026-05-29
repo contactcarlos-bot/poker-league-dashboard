@@ -487,7 +487,7 @@ try:
             x=alt.X("Player Name:N", sort="-y", title="", axis=alt.Axis(labelAngle=-45)),
             y=alt.Y("Total Points:Q", title=""),
             # Inside your points_chart definition:
-            color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None)
+            color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
             tooltip=["Player Name", "Total Points"]
         ).properties(height=260)
         
