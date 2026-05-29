@@ -34,48 +34,51 @@ else:
 st.markdown(
     """
     <style>
-    /* 🛡️ COMPLETELY VAPORIZES H hamburger menu, DEPLOY, FOOTERS, AND HOSTED BADGES */
+    /* 🛡️ VAPORIZES MENUS & STREAMLIT BRANDING MARKERS */
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
     .stDeployButton {display: none !important;}
     div[data-testid="stDecoration"] {display: none !important;}
-    
-    /* 🎯 TARGETS AND DELETES THE BOTTOM RIGHT 'HOSTED WITH STREAMLIT' FLOATING ACTION BADGE */
     .viewerBadge {display: none !important;}
     div[data-testid="stViewerBadge"] {display: none !important;}
     button[title="View source on GitHub"] {display: none !important;}
     
-    /* 📊 REDUCES DATAFRAME TEXT SIZE (SHRINKS BOUNTY LOG TABLES) */
+    /* 🎨 COMPACT DATAFRAME ROW TYPOGRAPHY */
     div[data-testid="stDataFrame"] td, 
     div[data-testid="stDataFrame"] th,
     div[data-testid="stDataFrame"] div {
-        font-size: 0.85rem !important;
+        font-size: 0.88rem !important;
+        font-family: 'Inter', -apple-system, sans-serif !important;
     }
     
-    /* 🎯 TARGETS PLAYER NAMES: Shrinks text uniquely inside metric values */
+    /* 🃏 PREMIUM METRIC CARDS STYLE SHIFT */
     div[data-testid="stMetricValue"] div, 
     div[data-testid="stMetricValue"] span {
-        font-size: 1.25rem !important;
-        letter-spacing: -0.02em;
-        font-weight: 600 !important;
+        font-size: 1.3rem !important;
+        letter-spacing: -0.01em;
+        font-weight: 700 !important;
+        color: #f1f2f6 !important;
     }
-    
-    /* Keeps numbers/static values bold and readable */
     div[data-testid="stMetricValue"] {
         font-size: 1.6rem !important;
         font-weight: 700;
     }
-    
-    /* Shrinks the smaller bottom metrics labels (e.g., "1600 pts", "Wins") */
     div[data-testid="stMetricDelta"] {
+        font-size: 0.88rem !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stMetricLabel"] p {
         font-size: 0.85rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        color: #a4b0be !important;
     }
     
-    /* Shrinks the top category header emojis & titles */
-    div[data-testid="stMetricLabel"] p {
-        font-size: 0.9rem !important;
-        font-weight: 600;
+    /* 🚨 CLEAN CUSTOM ALERTS STYLE override */
+    div[data-testid="stNotification"] {
+        border-radius: 8px !important;
+        border: 1px solid rgba(231, 76, 60, 0.2) !important;
     }
     </style>
     """,
