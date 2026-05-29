@@ -289,20 +289,20 @@ try:
             .map(highlight_low_attendance, subset=["Games Played"])
             
         # 🎯 FORCE CENTER ALIGNMENT VIA STREAMLIT COLUMN CONFIG
-st.dataframe(
-    styled_df, 
-    use_container_width=True,
-    hide_index=False,  # Shows clean rank numbers (1, 2, 3...) on the left margin
-    column_config={
-        "Player Name": st.column_config.TextColumn("♠️ Player"),
-        "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
-        "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
-        "🥇 1st": st.column_config.NumberColumn(alignment="center"),
-        "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
-        "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
-        "Final Tables": st.column_config.NumberColumn("🃏 Final Tables", alignment="center"),
-        "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", alignment="center")
-    }
+    st.dataframe(
+        styled_df, 
+        use_container_width=True,
+        hide_index=False,  # Shows clean rank numbers (1, 2, 3...) on the left margin
+        column_config={
+            "Player Name": st.column_config.TextColumn("♠️ Player"),
+            "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
+            "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
+            "🥇 1st": st.column_config.NumberColumn(alignment="center"),
+            "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
+            "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
+            "Final Tables": st.column_config.NumberColumn("🃏 Final Tables", alignment="center"),
+            "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", alignment="center")
+        }
 )
 
     # =========================================================================
