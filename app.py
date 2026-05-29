@@ -305,7 +305,7 @@ try:
         }
 )
 
-    # =========================================================================
+# =========================================================================
     # 🎉 NIGHTLY BOUNTIES & WILDCARDS (WITH NAME TRANSLATION, PRIZES & DATES)
     # =========================================================================
     st.markdown("---")
@@ -348,29 +348,23 @@ try:
             player_name = PLAYER_REGISTRY.get(lookup_key, input_name.title())
             spin_wheel_records.append({"Date": game_date, "Player Name": player_name, "Prize Won": prize_text})
             
-# This builds your two side-by-side columns
-        w_col1, w_col2 = st.columns(2)
-        
-        with w_col1:
-            # 📦 BOXED CONTAINER FOR HIGH HAND LOGS
-            with st.container(border=True):
-                st.markdown("### 🪵 High Hand Elite Logs")
-                if high_hand_records:
-                    df_hh = pd.DataFrame(high_hand_records).sort_values(by="Date", ascending=False)
-                    st.dataframe(df_hh, use_container_width=True, hide_index=True)
-                else:
-                    st.info("No High Hand records logged yet for this season.")
-                
-        with w_col2:
-            # 📦 BOXED CONTAINER FOR ACE OF SPADES WHEEL SPINS
-            with st.container(border=True):
-                st.markdown("### 🎡 Ace of Spades Wheel Spins")
-                if spin_wheel_records:
-                    df_sw = pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False)
-                    st.dataframe(df_sw, use_container_width=True, hide_index=True)
-                else:
-                    st.info("No Spade Ace wheel draws tracked yet for this season.")
-   
+    w_col1, w_col2 = st.columns(2)
+    
+    with w_col1:
+        st.markdown("### 🪵 High Hand Elite Logs")
+        if high_hand_records:
+            df_hh = pd.DataFrame(high_hand_records).sort_values(by="Date", ascending=False)
+            st.dataframe(df_hh, use_container_width=True, hide_index=True)
+        else:
+            st.info("No High Hand records logged yet for this season.")
+            
+    with w_col2:
+        st.markdown("### 🎡 Ace of Spades Wheel Spins")
+        if spin_wheel_records:
+            df_sw = pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False)
+            st.dataframe(df_sw, use_container_width=True, hide_index=True)
+        else:
+            st.info("No Spade Ace wheel draws tracked yet for this season.")
     # -----------------------------------------------------------------
     # ⚙️ DASHBOARD CONTROLS
     # -----------------------------------------------------------------
