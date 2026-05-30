@@ -398,7 +398,7 @@ try:
             st.info("No High Hand records logged yet for this season.")
             
     with w_col2:
-        st.markdown("### 🎡 Ace of Spades Wheel Spins")
+        st.markdown("### 🎡 Wheel Spins A♠️")
         if spin_wheel_records:
             df_sw = pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False)
             st.dataframe(df_sw, use_container_width=True, hide_index=True)
