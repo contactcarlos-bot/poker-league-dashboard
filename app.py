@@ -30,8 +30,7 @@ html(
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-st.error("🚨 **IMPORTANT NOTICE:**  TODAY AT 4PM 🛰 SATELLITE GAME!!! --- TOC next Saturday, June 6, (Lunch at 12:15pm - Cards Dealt at 1:00pm)")
-
+st.error("🚨 **LIVE TODAY AT 4:00 PM:** 🛰️ Satellite Match! Winner secures the final 10th seat in the TOC. --- 👑 Tournament of Champions next Saturday, June 6 (Lunch at 12:15 PM / Cards Dealt at 1:00 PM).")
 # =========================================================================
 # 🔄 SEASON SELECTOR SYSTEM
 # =========================================================================
