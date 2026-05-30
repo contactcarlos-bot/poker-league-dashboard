@@ -30,7 +30,7 @@ html(
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-st.error("🚨 **IMPORTANT NOTICE:** Tournament of Champions Will Be Played on Saturday, June 6, 2026 (Lunch at 12:15pm- Cards Dealt at 1:00pm)")
+st.error("🚨 **IMPORTANT NOTICE:**  TODAY AT 4PM 🛰 SATELLITE GAME!!! --- TOC next Saturday, June 6, (Lunch at 12:15pm - Cards Dealt at 1:00pm)")
 
 # =========================================================================
 # 🔄 SEASON SELECTOR SYSTEM
