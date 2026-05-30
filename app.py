@@ -200,8 +200,19 @@ try:
                     
                 points = calculate_poker_points(total_players, position)
                 
+                # 🧼 CLEANED PARSING BLOCK
                 lookup_key = raw_player_input.strip().replace(" ", "").lower()
-                player_name = PLAYER_REGISTRY.get(lookup_key, raw_player_input.strip().title())
+                
+                if lookup_key in PLAYER_REGISTRY:
+                    player_name = PLAYER_REGISTRY[lookup_key]
+                else:
+                    fallback_name = raw_player_input.strip().title()
+                    # Forces proper "McCleave" capitalization if typed manually
+                    if " Mcc" in fallback_name:
+                        fallback_name = fallback_name.replace(" Mcc", " McC")
+                    elif fallback_name.startswith("Mcc"):
+                        fallback_name = "McC" + fallback_name[3:]
+                    player_name = fallback_name
                 
                 parsed_history_records.append({
                     "Date": game_date.split()[0],
