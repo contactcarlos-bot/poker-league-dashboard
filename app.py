@@ -30,7 +30,7 @@ html(
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-st.error("🚨 **LIVE TODAY AT 4:00 PM:** 🛰️ Satellite Match! Winner secures the final 10th seat in the TOC. --- 👑 Tournament of Champions next Saturday, June 6 (Lunch at 12:15 PM / Cards Dealt at 1:00 PM).")
+st.error("🚨 👑 Tournament of Champions next Saturday, June 6 (Lunch at 12:15 PM / Cards Dealt at 1:00 PM).")
 # =========================================================================
 # 🔄 SEASON SELECTOR SYSTEM
 # =========================================================================
@@ -293,7 +293,7 @@ try:
             st.info("""
             **🛰️ Saturday Satellite Match**
             * **Status:** Scheduled (May 30 @ 4:00pm)
-            * **Current Winner:** *TBD* * **Reward:** Advances directly into TOC as Seed #10
+            * **Current Winner:** *Rob Christian* * **Reward:** Advances directly into TOC as Seed #10
             """)
         with b_col2:
             st.success("""
