@@ -292,8 +292,8 @@ try:
         with b_col1:
             st.info("""
             **🛰️ Saturday Satellite Match**
-            * **Status:** Scheduled (May 30 @ 4:00pm)
-            * **Current Winner:** *Rob Christian* * **Reward:** Advances directly into TOC as Seed #10
+            * **Status:** Completed May 30 @ 4:00pm
+            * **Current Winner:** Rob Christian * **Reward:** Advances directly into TOC as Seed #10
             """)
         with b_col2:
             st.success("""
