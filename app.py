@@ -99,7 +99,7 @@ st.markdown(
         <strong>♠️ Season XLVIII Briefing:</strong><br>
         • Master player registry tables have been modernized to full-name matrices.<br>
         • Chronological scoring structures are locked in.<br>
-        • Live data synchronization fields will return online shortly before cards are in the air.
+        • Live data synchronization fields will return online shortly.
     </div>
     """, 
     unsafe_allow_html=True
