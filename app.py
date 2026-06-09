@@ -40,23 +40,6 @@ html(
 st.success("🎉 **SEASON XLVII COMPLETE:** Congratulations to our newly crowned Tournament of Champions Winner Dustan Mulkey!")
 
 # =========================================================================
-# 🔄 SEASON SELECTOR SYSTEM
-# =========================================================================
-selected_season = st.selectbox(
-    "🍂 Select League Season:",
-    ["Season XLVIII (Current)", "Season XLVII (Archived)"],
-    index=0
-)
-
-# Map selections to exact Google Sheet tab names
-if "Season XLVIII" in selected_season:
-    TARGET_WORKSHEET = "Form Responses S48"
-    st.title("🏆 Dirty Town Poker League - Season XLVIII")
-else:
-    TARGET_WORKSHEET = "Form Responses 1"
-    st.title("🏆 Dirty Town Poker League - Season XLVII")
-
-# =========================================================================
 # 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
 # =========================================================================
 st.markdown(
@@ -678,7 +661,26 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     st.error(f"Failed to post data: {append_err}")
             else:
                 st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
-                    
+
+# =========================================================================
+# 🔄 SEASON SELECTOR SYSTEM
+# =========================================================================
+selected_season = st.selectbox(
+    "🍂 Select League Season:",
+    ["Season XLVIII (Current)", "Season XLVII (Archived)"],
+    index=0
+)
+
+# Map selections to exact Google Sheet tab names
+if "Season XLVIII" in selected_season:
+    TARGET_WORKSHEET = "Form Responses S48"
+    st.title("🏆 Dirty Town Poker League - Season XLVIII")
+else:
+    TARGET_WORKSHEET = "Form Responses 1"
+    st.title("🏆 Dirty Town Poker League - Season XLVII")
+
+
+
 # -----------------------------------------------------------------
 # 🛡️ LEAGUE INFO FOOTER 
 # -----------------------------------------------------------------
