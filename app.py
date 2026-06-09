@@ -354,9 +354,8 @@ if not base_sorted_leaderboard.empty:
 st.markdown("---")
 st.subheader("🏁 Post-Season Championship Series Bracket")
 
-# 🔒 EXACT MATCH CHECK: Only show the old table results when the Archive tab is active
+# 1️⃣ ARCHIVED SEASON XLVII VIEW
 if "Season XLVII (Archived)" in selected_season:
-    
     # 👑 CUSTOM CHAMPION PODIUM DISPLAY
     st.markdown(
         """
@@ -378,7 +377,6 @@ if "Season XLVII (Archived)" in selected_season:
         unsafe_allow_html=True
     )
     
-    # 📜 Show historical records for last season below the podium
     b_col1, b_col2 = st.columns(2)
     with b_col1:
         st.success("""
@@ -403,17 +401,33 @@ if "Season XLVII (Archived)" in selected_season:
         * **10th Place:** David Lee
         """)
 
+# 2️⃣ UPCOMING FUTURE SEASON XLIX VIEW
+elif "Season XLIX" in selected_season:
+    b_col1, b_col2 = st.columns(2)
+    with b_col1:
+        st.warning("""
+        **🛰️ Post-Season Satellite**
+        * **Date Scheduled:** To Be Determined (TBD) 📅
+        * **Time:** TBD ⏰
+        * **Status:** Staged for Future Season
+        """)
+    with b_col2:
+        st.warning("""
+        **👑 Tournament of Champions (TOC)**
+        * **Date Scheduled:** To Be Determined (TBD) 🏆
+        * **Timeline:** Schedule details will lock in once the Season XLIX calendar is officially released. 🍔🃏
+        * **Status:** Staged for Future Season
+        """)
+
+# 3️⃣ CURRENT ACTIVE SEASON XLVIII VIEW (DEFAULT FALLBACK)
 else:
-    # 📅 Default load out: Show the brand new schedule for active Season XLVIII!
     b_col1, b_col2 = st.columns(2)
     with b_col1:
         st.info("""
-        **🛰️ Upcoming Post-Season Satellite  **
+        **🛰️ Upcoming Post-Season Satellite**
         * **Date Scheduled:** Saturday, September 26, 2026 📅
         * **Time:** 4:00 PM EST ⏰
         * **Status:** Open Qualifier Frame
-        * **Requirement:** 8+ season games played
-
         """)
     with b_col2:
         st.info("""
@@ -423,7 +437,6 @@ else:
           • Cards in the Air: 1:00 PM 🃏
         * **Status:** Awaiting Qualified Field
         """)
-        
 
 # =========================================================================
 # 🎉 NIGHTLY BOUNTIES & WILDCARDS
