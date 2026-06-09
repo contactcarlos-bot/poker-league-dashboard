@@ -42,14 +42,17 @@ st.success("🎉 **SEASON XLVII COMPLETE:** Congratulations to our newly crowned
 # =========================================================================
 # 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
 # =========================================================================
-# Initialize a placeholder in session state so the choice persists across clicks
 if "active_season_choice" not in st.session_state:
+    # Keep Season XLVIII as the default load-out choice for now
     st.session_state["active_season_choice"] = "Season XLVIII (Current)"
 
 selected_season = st.session_state["active_season_choice"]
 
-# Map default selections cleanly to your Google Sheet tab names
-if "Season XLVIII" in selected_season:
+# Map choices to your Google Sheet tabs (Including the future Season XLIX)
+if "Season XLIX" in selected_season:
+    TARGET_WORKSHEET = "Form Responses S49"
+    st.title("🏆 Dirty Town Poker League - Season XLIX")
+elif "Season XLVIII" in selected_season:
     TARGET_WORKSHEET = "Form Responses S48"
     st.title("🏆 Dirty Town Poker League - Season XLVIII")
 else:
@@ -685,14 +688,25 @@ with st.expander("⚙️ Secure League Admin Portal"):
 st.markdown("---")
 st.markdown("### 🗂️ League History Archive")
 
-# Render the selector box near the bottom of the layout
+# Array of available dashboard frames
+season_options = [
+    "Season XLVIII (Current)", 
+    "Season XLIX (Upcoming)", 
+    "Season XLVII (Archived)"
+]
+
+# Safeguard the index calculation based on session state selection
+try:
+    current_index = season_options.index(st.session_state["active_season_choice"])
+except ValueError:
+    current_index = 0
+
 season_toggle = st.selectbox(
     "🍂 Toggle Active League Season Dashboard View:",
-    ["Season XLVIII (Current)", "Season XLVII (Archived)"],
-    index=0 if "Season XLVIII" in st.session_state["active_season_choice"] else 1
+    season_options,
+    index=current_index
 )
 
-# If a player changes it at the bottom, update session state and refresh instantly
 if season_toggle != st.session_state["active_season_choice"]:
     st.session_state["active_season_choice"] = season_toggle
     st.rerun()
