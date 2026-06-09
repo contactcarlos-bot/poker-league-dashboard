@@ -405,8 +405,8 @@ else:
     b_col1, b_col2 = st.columns(2)
     with b_col1:
         st.info("""
-        **🛰️ Upcoming Post-Season Satellite 
-        (8 season games min. required) **
+        **🛰️ Upcoming Post-Season Satellite  **
+        * **NOTE: 8 minimum season games required**
         * **Date Scheduled:** Saturday, September 26, 2026 📅
         * **Time:** 4:00 PM EST ⏰
         * **Status:** Open Qualifier Frame
