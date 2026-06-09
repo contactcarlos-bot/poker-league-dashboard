@@ -428,6 +428,7 @@ else:
         * **Date Scheduled:** Saturday, September 26, 2026 📅
         * **Time:** 4:00 PM EST ⏰
         * **Status:** Open Qualifier Frame
+        * **Requirement:** 8+ season games played
         """)
     with b_col2:
         st.info("""
