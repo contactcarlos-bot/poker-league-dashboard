@@ -643,4 +643,4 @@ with st.expander("⚙️ Secure League Admin Portal"):
 # 🛡️ LEAGUE INFO FOOTER 
 # -----------------------------------------------------------------
 st.markdown("---")
-st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **M. Stephen Craft** 🙉")
+st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Stephen Craft** 🙉")
