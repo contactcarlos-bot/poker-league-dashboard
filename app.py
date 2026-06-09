@@ -65,6 +65,22 @@ st.markdown(
     #MainMenu {visibility: hidden !important;}
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
+
+    /* 🎡 Shrink text sizes inside the High Hand and Wheel Spin log tables */
+    div[data-testid="stDataFrameCollapsedCell"] div,
+    div[data-testid="stDataFrame"] table,
+    .stDataFrame div[data-testid="styled-data-frame"] div {
+        font-size: 0.78rem !important;
+        font-family: 'Inter', -apple-system, sans-serif !important;
+    }
+    
+    /* Make the subsection titles slightly sleeker to match */
+    h3#high-hand-elite-logs, h3#ace-of-spades-wheel-spins {
+        font-size: 1.1rem !important;
+        color: #a4b0be !important;
+        margin-top: 10px !important;
+    }
+    
     .stDeployButton {display: none !important;}
     div[data-testid="stDecoration"] {display: none !important;}
     .viewerBadge {display: none !important;}
