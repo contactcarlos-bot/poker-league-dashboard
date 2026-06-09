@@ -406,10 +406,11 @@ else:
     with b_col1:
         st.info("""
         **🛰️ Upcoming Post-Season Satellite  **
-        * **NOTE: 8 minimum season games required**
         * **Date Scheduled:** Saturday, September 26, 2026 📅
         * **Time:** 4:00 PM EST ⏰
         * **Status:** Open Qualifier Frame
+        * **Requirement:** 8+ season games played
+
         """)
     with b_col2:
         st.info("""
