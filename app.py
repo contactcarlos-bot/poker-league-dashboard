@@ -12,24 +12,6 @@ st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layou
 # =========================================================================
 if "temporary_walk_ins" not in st.session_state:
     st.session_state["temporary_walk_ins"] = []
-# =========================================================================
-# 🔄 SEASON SELECTOR SYSTEM
-# =========================================================================
-selected_season = st.selectbox(
-    "🍂 Select League Season:",
-    ["Season XLVIII (Current)", "Season XLVII (Archived)"],
-    index=0
-)
-
-# Map selections to exact Google Sheet tab names
-if "Season XLVIII" in selected_season:
-    TARGET_WORKSHEET = "Form Responses S48"
-    st.title("🏆 Dirty Town Poker League - Season XLVIII")
-else:
-    TARGET_WORKSHEET = "Form Responses 1"
-    st.title("🏆 Dirty Town Poker League - Season XLVII")
-
-
 
 # =========================================================================
 # 🪓 JAVASCRIPT INJECTION: BREAKS IFRAME TO REMOVE FLOATING TOOLBARS
@@ -56,6 +38,23 @@ html(
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
 st.success("🎉 **SEASON XLVII COMPLETE:** Congratulations to our newly crowned Tournament of Champions Winner Dustan Mulkey!")
+
+# =========================================================================
+# 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
+# =========================================================================
+# Initialize a placeholder in session state so the choice persists across clicks
+if "active_season_choice" not in st.session_state:
+    st.session_state["active_season_choice"] = "Season XLVIII (Current)"
+
+selected_season = st.session_state["active_season_choice"]
+
+# Map default selections cleanly to your Google Sheet tab names
+if "Season XLVIII" in selected_season:
+    TARGET_WORKSHEET = "Form Responses S48"
+    st.title("🏆 Dirty Town Poker League - Season XLVIII")
+else:
+    TARGET_WORKSHEET = "Form Responses 1"
+    st.title("🏆 Dirty Town Poker League - Season XLVII")
 
 # =========================================================================
 # 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
@@ -680,6 +679,23 @@ with st.expander("⚙️ Secure League Admin Portal"):
             else:
                 st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
 
+# =========================================================================
+# 🔄 ARCHIVE NAVIGATION SYSTEM (BOTTOM OF PAGE)
+# =========================================================================
+st.markdown("---")
+st.markdown("### 🗂️ League History Archive")
+
+# Render the selector box near the bottom of the layout
+season_toggle = st.selectbox(
+    "🍂 Toggle Active League Season Dashboard View:",
+    ["Season XLVIII (Current)", "Season XLVII (Archived)"],
+    index=0 if "Season XLVIII" in st.session_state["active_season_choice"] else 1
+)
+
+# If a player changes it at the bottom, update session state and refresh instantly
+if season_toggle != st.session_state["active_season_choice"]:
+    st.session_state["active_season_choice"] = season_toggle
+    st.rerun()
 
 # -----------------------------------------------------------------
 # 🛡️ LEAGUE INFO FOOTER 
