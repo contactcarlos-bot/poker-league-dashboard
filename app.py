@@ -353,7 +353,29 @@ st.subheader("🏁 Post-Season Championship Series Bracket")
 
 # 🔒 EXACT MATCH CHECK: Only show the old table results when the Archive tab is active
 if "Season XLVII (Archived)" in selected_season:
-    # 📜 Show historical records for last season
+    
+    # 👑 CUSTOM CHAMPION PODIUM DISPLAY
+    st.markdown(
+        """
+        <div style="
+            background: linear-gradient(135deg, rgba(255, 165, 0, 0.12) 0%, rgba(0, 0, 0, 0.4) 100%);
+            border: 2px solid #ffa502;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        ">
+            <span style="font-size: 2.5rem;">👑</span>
+            <h2 style="color: #ffa502; margin: 5px 0 0 0; font-weight: 800; letter-spacing: 0.03em;">SEASON XLVII GRAND CHAMPION</h2>
+            <p style="color: #f1f2f6; font-size: 1.6rem; font-weight: 700; margin: 10px 0 5px 0;">🥇 Dustan Mulkey</p>
+            <p style="color: #a4b0be; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">Tournament of Champions Victor</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # 📜 Show historical records for last season below the podium
     b_col1, b_col2 = st.columns(2)
     with b_col1:
         st.success("""
