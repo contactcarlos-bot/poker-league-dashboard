@@ -320,7 +320,11 @@ if not base_sorted_leaderboard.empty:
     display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
     display_leaderboard.index = display_leaderboard.index + 1
     
-    final_table_df = display_leaderboard[["Player Name", "Last Game Points", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"]]
+    # 🔄 SWAPPED COLUMN ORDER: Placed 'Last Game Points' directly after 'Total Points'
+    final_table_df = display_leaderboard[[
+        "Player Name", "Total Points", "Last Game Points", 
+        "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"
+    ]]
 
     def highlight_last_game(val):
         return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
@@ -343,7 +347,7 @@ if not base_sorted_leaderboard.empty:
             "🥇 1st": st.column_config.NumberColumn(alignment="center"),
             "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
             "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
-            "Final Tables": st.column_config.NumberColumn("🃏 Final Tables", alignment="center"),
+            "Final Tables": st.column_config.NumberColumn("🃏 FT", alignment="center"),  # 🪓 ABBREVIATED TO FT
             "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", alignment="center")
         }
     )
