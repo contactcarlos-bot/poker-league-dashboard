@@ -37,7 +37,7 @@ html(
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-st.success("🎉 **SEASON XLVII COMPLETE:** Congratulations to our newly crowned Tournament of Champions Winner Dustan Mulkey!")
+# st.success("🎉 **Note:** Congratulations to our newly crowned Tournament of Champions Winner Dustan Mulkey!")
 
 # =========================================================================
 # 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
