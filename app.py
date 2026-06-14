@@ -37,7 +37,7 @@ html(
 # =========================================================================
 # 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
 # =========================================================================
-# st.success("🎉 **Note:** Congratulations to our newly crowned Tournament of Champions Winner Dustan Mulkey!")
+#st.success("🎉 **Note:** Please contact Todd in advance if you know you will not be able to attend a game. ")
 
 # =========================================================================
 # 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
@@ -291,8 +291,6 @@ try:
             m_col1, m_col2, m_col3, m_col4 = st.columns(4)
             
             current_leader = base_sorted_leaderboard.iloc[0]["Player Name"]
-            max_games = base_sorted_leaderboard["Games Played"].max()
-            attendance_kings = base_sorted_leaderboard[base_sorted_leaderboard["Games Played"] == max_games]["Player Name"].tolist()
             
             win_sorted = leaderboard.sort_values(by="🥇 1st", ascending=False)
             win_boss = win_sorted.iloc[0]["Player Name"] if not win_sorted.empty else "N/A"
@@ -301,11 +299,12 @@ try:
             with m_col1:
                 st.metric("League Leader 🥇", current_leader, f"{base_sorted_leaderboard.iloc[0]['Total Points']} pts")
             with m_col2:
-                st.metric("Max Attendance 🏃‍♂️", attendance_kings[0] if attendance_kings else "N/A", f"{max_games} games")
-            with m_col3:
                 st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
-            with m_col4:
+            with m_col3:
                 st.metric("Commissioner 👑", "Michael Craft", "League Admin")
+            with m_col4:
+                # 🃏 ADDED: Vice-Commissioner role sitting at the end column
+                st.metric("Co-Commissioner 🥈", "Todd Kinsell", "League Admin")
 
 except Exception as data_load_error:
     st.error(f"Could not load sheets backend database engine: {data_load_error}")
@@ -734,4 +733,9 @@ if season_toggle != st.session_state["active_season_choice"]:
 # 🛡️ LEAGUE INFO FOOTER 
 # -----------------------------------------------------------------
 st.markdown("---")
-st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Stephen Craft** 🙉")
+st.info(
+    "📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, "
+    "please contact your League Commissioner: **Michael Stephen Craft** 🙉. "
+    "If you know you will **not** be able to attend this week's game, please notify "
+    "Co-Commissioner **Todd Kinsell** as early as possible! 🏃‍♂️"
+)
