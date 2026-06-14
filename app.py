@@ -304,7 +304,7 @@ try:
                 st.metric("Commissioner 👑", "Michael Craft", "League Admin")
             with m_col4:
                 # 🃏 ADDED: Vice-Commissioner role sitting at the end column
-                st.metric("Co-Commissioner 🥈", "Todd Kinsell", "League Admin")
+                st.metric("Co-Commissioner 👑", "Todd Kinsell", "League Admin")
 
 except Exception as data_load_error:
     st.error(f"Could not load sheets backend database engine: {data_load_error}")
