@@ -681,14 +681,20 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     
                     formatted_standings = "\n".join(placements_data)
                     sheet = active_workbook.worksheet(TARGET_WORKSHEET)
-                    # 🛡️ Force Google Sheets to append as raw user input on a clean new row
-                    sheet.append_row([
+                    
+                    # 🎯 Find the absolute last structural row currently occupied
+                    next_open_row = len(sheet.get_all_values()) + 1
+                    
+                    # 🛡️ Force write explicitly to the next clean row index (e.g., Row 5, Row 6)
+                    row_values = [
                         str(game_date_input), 
                         str(game_date_input), 
                         formatted_standings, 
                         high_hand_input.strip(), 
                         wheel_spin_input.strip()
-                    ], value_input_option="USER_ENTERED")
+                    ]
+                    
+                    sheet.insert_row(row_values, index=next_open_row, value_input_option="USER_ENTERED")
                     
                     st.balloons()
                     st.success("Game posted and new players permanently registered!")
