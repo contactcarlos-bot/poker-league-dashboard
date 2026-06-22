@@ -631,7 +631,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
         st.markdown("#### 📋 Input Tonight's Game Ledger")
         
         game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now())
-        field_size = st.number_input("Total Players in Tonight's Field:", min_value=2, max_value=30, value=15)
+        field_size = st.number_input("Total Players in Tonight's Field:", min_value=2, max_value=30, value=30)
         
         available_players = sorted(PLAYER_REGISTRY + st.session_state["temporary_walk_ins"])
         
@@ -743,5 +743,5 @@ st.info(
     "📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, "
     "please contact your League Commissioner: **Michael Stephen Craft** 🙉. "
     "If you know you will **not** be able to attend this week's game, please notify "
-    "Co-Commissioner **Todd Kinsell** as early as possible! 🏃‍♂️"
+    " **Todd Kinsell** as early as possible! 🏃‍♂️"
 )
