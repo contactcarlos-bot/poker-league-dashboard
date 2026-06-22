@@ -571,19 +571,19 @@ if "Season XLVII" in selected_season and not leaderboard.empty:
     # -----------------------------------------------------------------
     # 📈 VISUAL BAR CHART
     # -----------------------------------------------------------------
-    st.markdown("---")
-    st.subheader("📈 Top 10 Performance Standings (Points)")
-    points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-        x=alt.X("Player Name:N", sort="-y", title="", axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y("Total Points:Q", title=""),
-        color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
-        tooltip=["Player Name", "Total Points"]
-    ).properties(height=260)
+    #st.markdown("---")
+    #st.subheader("📈 Top 10 Performance Standings (Points)")
+    #points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+    #    x=alt.X("Player Name:N", sort="-y", title="", axis=alt.Axis(labelAngle=-45)),
+    #    y=alt.Y("Total Points:Q", title=""),
+    #    color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
+    #    tooltip=["Player Name", "Total Points"]
+    #).properties(height=260)
     
-    with st.container():
-        st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
-        st.altair_chart(points_chart, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    #with st.container():
+    #    st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+    #    st.altair_chart(points_chart, use_container_width=True)
+    #    st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
     # 🔮 LEAGUE ARCHETYPES BUBBLE CHART
