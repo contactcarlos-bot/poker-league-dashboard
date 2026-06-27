@@ -35,20 +35,13 @@ html(
 )
 
 # =========================================================================
-# 🚨 IMPORTANT LEAGUE ANNOUNCEMENTS (TOP OF PAGE)
-# =========================================================================
-#st.success("🎉 **Note:** Please contact Todd in advance if you know you will not be able to attend a game. ")
-
-# =========================================================================
 # 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
 # =========================================================================
 if "active_season_choice" not in st.session_state:
-    # Keep Season XLVIII as the default load-out choice for now
     st.session_state["active_season_choice"] = "Season XLVIII (Current)"
 
 selected_season = st.session_state["active_season_choice"]
 
-# Map choices to your Google Sheet tabs (Including the future Season XLIX)
 if "Season XLIX" in selected_season:
     TARGET_WORKSHEET = "Form Responses S49"
     st.title("🏆 Dirty Town Poker League - Season XLIX")
@@ -58,6 +51,7 @@ elif "Season XLVIII" in selected_season:
 else:
     TARGET_WORKSHEET = "Form Responses 1"
     st.title("🏆 Dirty Town Poker League - Season XLVII")
+
 
 # =========================================================================
 # 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
@@ -69,7 +63,6 @@ st.markdown(
     footer {visibility: hidden !important;}
     header {visibility: hidden !important;}
 
-    /* 🎡 Shrink text sizes inside the High Hand and Wheel Spin log tables */
     div[data-testid="stDataFrameCollapsedCell"] div,
     div[data-testid="stDataFrame"] table,
     .stDataFrame div[data-testid="styled-data-frame"] div {
@@ -77,7 +70,6 @@ st.markdown(
         font-family: 'Inter', -apple-system, sans-serif !important;
     }
     
-    /* Make the subsection titles slightly sleeker to match */
     h3#high-hand-elite-logs, h3#ace-of-spades-wheel-spins {
         font-size: 1.1rem !important;
         color: #a4b0be !important;
@@ -133,7 +125,6 @@ st.markdown(
 # =========================================================================
 @st.cache_data(ttl=60)
 def load_player_registry():
-    """Loads the official player roster list directly from the Google Sheet."""
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
         try:
@@ -152,7 +143,6 @@ def load_player_registry():
 PLAYER_REGISTRY = load_player_registry()
 
 def calculate_poker_points(total_players, rank):
-    """Looks up exact matrix points based on field size and rank placement."""
     buy_ins = int(total_players)
     rank = int(rank)
     LEAGUE_MATRIX = {
@@ -227,7 +217,6 @@ try:
                 
             total_players = len(raw_list)
             for index, raw_player_input in enumerate(raw_list):
-                # 🃏 Winner is on top row (index 0 -> position 1)
                 position = index + 1
                 points = calculate_poker_points(total_players, position)
                 
@@ -282,7 +271,20 @@ try:
         
         leaderboard.columns = ["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"]
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
-        
+
+
+        # -----------------------------------------------------------------
+        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER
+        # -----------------------------------------------------------------
+        total_games_played = max(0, len(cleaned_rows) - 1)
+        if total_games_played > 0:
+            st.success(
+                f"🃏 **{selected_season.split(' (')[0].upper()} UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.\n\n"
+                
+            )
+        else:
+            st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")   
+
         # -----------------------------------------------------------------
         # METRICS SHELF
         # -----------------------------------------------------------------
@@ -303,7 +305,6 @@ try:
             with m_col3:
                 st.metric("Commissioner 📋", "Michael Craft", "League Admin")
             with m_col4:
-                # 🃏 ADDED: Vice-Commissioner role sitting at the end column
                 st.metric("Co-Commissioner 💼", "Todd Kinsell", "League Admin")
 
 except Exception as data_load_error:
@@ -319,21 +320,28 @@ if not base_sorted_leaderboard.empty:
     display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
     display_leaderboard.index = display_leaderboard.index + 1
     
-    # 🔄 SWAPPED COLUMN ORDER: Placed 'Last Game Points' directly after 'Total Points'
+    # 🔄 Format raw integer counts into the precise clean string format: "n / 18"
+    display_leaderboard["Games Played Format"] = display_leaderboard["Games Played"].apply(lambda x: f"{int(x)} / 18")
+    
     final_table_df = display_leaderboard[[
         "Player Name", "Total Points", "Last Game Points", 
-        "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"
+        "Games Played Format", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Games Played"
     ]]
 
     def highlight_last_game(val):
         return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
 
-    def highlight_low_attendance(val):
-        return 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;' if val <= 7 else ''
+    def highlight_low_attendance(row):
+        # 🚨 Strict Rule Check: If raw attendance count is <= 7, style the formatted string red
+        styles = [''] * len(row)
+        if row["Games Played"] <= 7:
+            idx = row.index.get_loc("Games Played Format")
+            styles[idx] = 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;'
+        return styles
 
     styled_df = final_table_df.style\
         .map(highlight_last_game, subset=["Last Game Points"])\
-        .map(highlight_low_attendance, subset=["Games Played"])
+        .apply(highlight_low_attendance, axis=1)
         
     st.dataframe(
         styled_df, 
@@ -346,8 +354,9 @@ if not base_sorted_leaderboard.empty:
             "🥇 1st": st.column_config.NumberColumn(alignment="center"),
             "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
             "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
-            "Final Tables": st.column_config.NumberColumn("🃏 FT", alignment="center"),  # 🪓 ABBREVIATED TO FT
-            "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", alignment="center")
+            "Final Tables": st.column_config.NumberColumn("🃏 FT", alignment="center"),
+            "Games Played Format": st.column_config.TextColumn("🏃‍♂️ Played", alignment="center"),
+            "Games Played": None  # Safeguards backend validation variable out of user sight
         }
     )
 
@@ -357,18 +366,12 @@ if not base_sorted_leaderboard.empty:
 st.markdown("---")
 st.subheader("🏁 Post-Season Championship Series Bracket")
 
-# 1️⃣ ARCHIVED SEASON XLVII VIEW
 if "Season XLVII (Archived)" in selected_season:
-    # 👑 CUSTOM CHAMPION PODIUM DISPLAY
     st.markdown(
         """
         <div style="
             background: linear-gradient(135deg, rgba(255, 165, 0, 0.12) 0%, rgba(0, 0, 0, 0.4) 100%);
-            border: 2px solid #ffa502;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 25px;
+            border: 2px solid #ffa502; border-radius: 12px; padding: 25px; text-align: center; margin-bottom: 25px;
             box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         ">
             <span style="font-size: 2.5rem;">👑</span>
@@ -404,7 +407,6 @@ if "Season XLVII (Archived)" in selected_season:
         * **10th Place:** David Lee
         """)
 
-# 2️⃣ UPCOMING FUTURE SEASON XLIX VIEW
 elif "Season XLIX" in selected_season:
     b_col1, b_col2 = st.columns(2)
     with b_col1:
@@ -422,7 +424,6 @@ elif "Season XLIX" in selected_season:
         * **Status:** Staged for Future Season
         """)
 
-# 3️⃣ CURRENT ACTIVE SEASON XLVIII VIEW (DEFAULT FALLBACK)
 else:
     b_col1, b_col2 = st.columns(2)
     with b_col1:
@@ -431,7 +432,7 @@ else:
         * **Date Scheduled:** Saturday, September 26, 2026 📅
         * **Time:** 4:00 PM EST ⏰
         * **Status:** Open Qualifier Frame
-        * **Requirement:** 8+ season games played
+        * **Requirement:** 8+ season games played to qualify
         """)
     with b_col2:
         st.info("""
@@ -569,23 +570,6 @@ if "Season XLVII" in selected_season and not leaderboard.empty:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # -----------------------------------------------------------------
-    # 📈 VISUAL BAR CHART
-    # -----------------------------------------------------------------
-    #st.markdown("---")
-    #st.subheader("📈 Top 10 Performance Standings (Points)")
-    #points_chart = alt.Chart(base_sorted_leaderboard.head(10)).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
-    #    x=alt.X("Player Name:N", sort="-y", title="", axis=alt.Axis(labelAngle=-45)),
-    #    y=alt.Y("Total Points:Q", title=""),
-    #    color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
-    #    tooltip=["Player Name", "Total Points"]
-    #).properties(height=260)
-    
-    #with st.container():
-    #    st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
-    #    st.altair_chart(points_chart, use_container_width=True)
-    #    st.markdown('</div>', unsafe_allow_html=True)
-
-    # -----------------------------------------------------------------
     # 🔮 LEAGUE ARCHETYPES BUBBLE CHART
     # -----------------------------------------------------------------
     st.markdown("---")
@@ -682,10 +666,9 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     formatted_standings = "\n".join(placements_data)
                     sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                     
-                    # 🎯 Find the absolute last structural row currently occupied
+                    # 🎯 Strict Row Calculation Tracker Fix
                     next_open_row = len(sheet.get_all_values()) + 1
                     
-                    # 🛡️ Force write explicitly to the next clean row index (e.g., Row 5, Row 6)
                     row_values = [
                         str(game_date_input), 
                         str(game_date_input), 
@@ -712,14 +695,12 @@ with st.expander("⚙️ Secure League Admin Portal"):
 st.markdown("---")
 st.markdown("### 🗂️ League History Archive")
 
-# Array of available dashboard frames
 season_options = [
     "Season XLVIII (Current)", 
     "Season XLIX (Upcoming)", 
     "Season XLVII (Archived)"
 ]
 
-# Safeguard the index calculation based on session state selection
 try:
     current_index = season_options.index(st.session_state["active_season_choice"])
 except ValueError:
@@ -741,7 +722,7 @@ if season_toggle != st.session_state["active_season_choice"]:
 st.markdown("---")
 st.info(
     "📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, "
-    "please contact your League Commissioner: **Michael Stephen Craft** 🙉. "
+    "please contact your League Commissioner: **Michael Stephen Craft** 👑. "
     "If you know you will **not** be able to attend this week's game, please notify "
-    " **Todd Kinsell** as early as possible! 🏃‍♂️"
+    "Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️"
 )
