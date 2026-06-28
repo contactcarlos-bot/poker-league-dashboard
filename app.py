@@ -273,18 +273,30 @@ try:
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
 
 
+
+
         # -----------------------------------------------------------------
-        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER
+        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER (Context-Aware Fix)
         # -----------------------------------------------------------------
         total_games_played = max(0, len(cleaned_rows) - 1)
-        if total_games_played > 0:
+        
+        # 🚨 Use explicit exact string matching to isolate the archive tab
+        if selected_season == "Season XLVII (Archived)":
+            st.success(
+                "🃏 **SEASON XLVII COMPLETED:** 17 regular season games are in the archives.\n\n"
+                "🏆 **Grand Champion:** Dustan Mulkey"
+            )
+        elif total_games_played > 0:
             st.success(
                 f"🃏 **{selected_season.split(' (')[0].upper()} UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.\n\n"
-                
+                "📌 **NOTE:** If you know you will not be able to attend this week's game, please notify "
+                "Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️"
             )
         else:
-            st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")   
-
+            st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")
+        
+        
+        
         # -----------------------------------------------------------------
         # METRICS SHELF
         # -----------------------------------------------------------------
@@ -320,8 +332,16 @@ if not base_sorted_leaderboard.empty:
     display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
     display_leaderboard.index = display_leaderboard.index + 1
     
-    # 🔄 Format raw integer counts into the precise clean string format: "n / 18"
-    display_leaderboard["Games Played Format"] = display_leaderboard["Games Played"].apply(lambda x: f"{int(x)} / 18")
+    # 🗓️ DYNAMIC SEASON WEEKS CALIBRATOR
+    if "Season XLVIII" in selected_season:
+        season_total_weeks = 18   # Current Season
+    elif "Season XLVII" in selected_season:
+        season_total_weeks = 17   # Archived Season
+    else:
+        season_total_weeks = 18   # Future Season XLIX default fallback (Change this number whenever you lock the calendar!)
+
+    # 🔄 Dynamically format the string label using the correct denominator for the active view
+    display_leaderboard["Games Played Format"] = display_leaderboard["Games Played"].apply(lambda x: f"{int(x)} / {season_total_weeks}")
     
     final_table_df = display_leaderboard[[
         "Player Name", "Total Points", "Last Game Points", 
@@ -332,7 +352,7 @@ if not base_sorted_leaderboard.empty:
         return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
 
     def highlight_low_attendance(row):
-        # 🚨 Strict Rule Check: If raw attendance count is <= 7, style the formatted string red
+        # 🚨 Protective Check: Highlights if attendance is 7 or less games, completely independent of the total weeks
         styles = [''] * len(row)
         if row["Games Played"] <= 7:
             idx = row.index.get_loc("Games Played Format")
@@ -356,7 +376,7 @@ if not base_sorted_leaderboard.empty:
             "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
             "Final Tables": st.column_config.NumberColumn("🃏 FT", alignment="center"),
             "Games Played Format": st.column_config.TextColumn("🏃‍♂️ Played", alignment="center"),
-            "Games Played": None  # Safeguards backend validation variable out of user sight
+            "Games Played": None  # Keeps the math sorting counter hidden out of view
         }
     )
 
