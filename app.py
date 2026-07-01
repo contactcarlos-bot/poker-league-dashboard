@@ -182,9 +182,9 @@ def get_raw_form_responses(worksheet_name):
     sheet = workbook.worksheet(worksheet_name)
     return sheet.get_all_values()
 
-if st.button("🔄 Sync Live Data Response Updates"):
-    st.cache_data.clear()
-    st.rerun()
+#if st.button("🔄 Sync Live Data Response Updates"):
+#    st.cache_data.clear()
+#    st.rerun()
 
 base_sorted_leaderboard = pd.DataFrame()
 leaderboard = pd.DataFrame()
@@ -290,7 +290,7 @@ try:
             st.success(
                 f"🃏 **{selected_season.split(' (')[0].upper()} UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.\n\n"
                 "📌 **NOTE:** If you know you will not be able to attend this week's game, please notify "
-                "Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️"
+                " **Todd Kinsell** 💼 as early as possible! 🏃‍♂️"
             )
         else:
             st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")
@@ -461,6 +461,7 @@ else:
         * **Timeline:** • Lunch Served: 12:15 PM 🍔
           • Cards in the Air: 1:00 PM 🃏
         * **Status:** Awaiting Qualified Field
+        * **Requirement:** Season Top 9 + Satellite Winner
         """)
 
 # =========================================================================
