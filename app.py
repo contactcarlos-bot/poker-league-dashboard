@@ -276,25 +276,23 @@ try:
 
 
         # -----------------------------------------------------------------
-        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER (Context-Aware Fix)
+        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER (Split Season 48 Banner)
         # -----------------------------------------------------------------
         total_games_played = max(0, len(cleaned_rows) - 1)
         
-        # 🚨 Use explicit exact string matching to isolate the archive tab
         if selected_season == "Season XLVII (Archived)":
             st.success(
                 "🃏 **SEASON XLVII COMPLETED:** 17 regular season games are in the archives.\n\n"
                 "🏆 **Grand Champion:** Dustan Mulkey"
             )
         elif total_games_played > 0:
-            st.success(
-                f"🃏 **{selected_season.split(' (')[0].upper()} UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.\n\n"
-                "📌 **NOTE:** If you know you will not be able to attend this week's game, please notify "
-                " **Todd Kinsell** 💼 as early as possible! 🏃‍♂️"
-            )
+            # 🟢 FIRST BANNER: Just the Game Counter
+            st.success(f"🃏 **{selected_season.split(' (')[0].upper()} UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.")
+            
+            # 🔵 SECOND BANNER: Dedicated Attendance Note
+            st.info("📌 **NOTE:** If you know you will not be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️")
         else:
-            st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")
-        
+            st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")      
         
         
         # -----------------------------------------------------------------
