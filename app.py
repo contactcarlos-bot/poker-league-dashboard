@@ -162,7 +162,7 @@ def calculate_poker_points(total_players, rank):
         16: [1523, 1015, 750, 587, 469, 380, 308, 249, 203, 171, 150, 137, 128, 120, 111, 100], 17: [1649, 1120, 830, 652, 525, 428, 351, 286, 233, 194, 166, 149, 137, 128, 121, 111, 100],
         18: [1775, 1228, 912, 721, 584, 479, 396, 326, 268, 221, 187, 163, 147, 137, 129, 121, 112, 100], 19: [1900, 1340, 998, 792, 645, 532, 442, 368, 305, 252, 211, 181, 161, 147, 137, 129, 121, 112, 100],
         20: [2028, 1456, 1101, 866, 710, 588, 491, 413, 345, 287, 239, 203, 178, 158, 147, 137, 129, 121, 112, 100], 21: [2124, 1547, 1182, 934, 770, 642, 539, 456, 385, 322, 270, 227, 197, 174, 157, 147, 137, 129, 121, 112, 100],
-        22: [2327, 1716, 1322, 1050, 867, 727, 612, 520, 442, 373, 313, 263, 224, 196, 174, 159, 149, 139, 131, 122, 113, 100], 23: [2428, 1813, 1409, 1126, 932, 786, 666, 567, 486, 413, 350, 295, 250, 217, 192, 171, 159, 148, 139, 131, 123, 113, 100],
+        22: [2327, 1716, 1322, 1050, 867, 727, 612, 520, 442, 373, 313, 263, 224, 196, 174, 159, 149, 139, 131, 122, 113, 100], 23: [2428, 1813, 1409, 1126, 932, 786, 666, 567, 486, 413, 350, 295, 250, 217, 192, 174, 157, 147, 137, 129, 121, 112, 100],
         24: [2529, 1910, 1496, 1203, 999, 847, 721, 617, 531, 456, 388, 330, 280, 240, 211, 187, 169, 159, 148, 139, 131, 123, 113, 100], 25: [2630, 2008, 1584, 1282, 1066, 908, 777, 668, 577, 499, 429, 366, 312, 267, 232, 206, 184, 169, 158, 148, 140, 132, 123, 113, 100],
         26: [2732, 2106, 1673, 1362, 1136, 971, 835, 720, 624, 543, 470, 404, 347, 297, 256, 226, 202, 181, 168, 158, 148, 140, 132, 123, 113, 100], 27: [2833, 2204, 1763, 1443, 1206, 1034, 894, 774, 673, 588, 513, 444, 383, 329, 284, 248, 221, 197, 179, 168, 158, 148, 140, 132, 123, 113, 100],
         28: [2934, 2303, 1853, 1525, 1279, 1098, 953, 829, 724, 634, 556, 485, 420, 363, 314, 273, 241, 216, 194, 178, 168, 158, 148, 141, 132, 123, 113, 100], 29: [3035, 2402, 1944, 1608, 1352, 1164, 1014, 886, 775, 681, 600, 527, 459, 399, 346, 300, 263, 235, 211, 191, 178, 168, 157, 149, 141, 132, 124, 113, 100],
@@ -582,464 +582,182 @@ if "Season XLVII" in selected_season and not leaderboard.empty:
         df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"].isin(list(base_sorted_leaderboard.head(5)["Player Name"]))]
         
     if not df_filtered_tracked.empty:
-        pivot_df = df_filtered_tracked.pivot_table(index="Date", columns="Player Name", values="Position", @ST.CACHE_DATA(TTL=60)
-def LOAD_PLAYER_REGISTRY():
-    TRY:
-        SCOPE = ["HTTPS://SPREADSHEETS.GOOGLE.COM/FEEDS", "HTTPS://WWW.GOOGLEAPIS.COM/AUTH/DRIVE"]
+        pivot_df = df_filtered_tracked.pivot_table(index="Date", columns="Player Name", values="Position", aggfunc="first")
+        line_data = pivot_df.reset_index().melt("Date", var_name="Player Name", value_name="Position").dropna()
+        line_data["Position"] = line_data["Position"].astype(int)
         
-        # 🔑 RENDER ENVIRONMENT CHECKER FIRST
-        IF "GCP_SERVICE_ACCOUNT" IN OS.ENVIRON:
-            CREDS_DICT = JSON.LOADS(OS.ENVIRON["GCP_SERVICE_ACCOUNT"])
-            CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_DICT(CREDS_DICT, SCOPE)
-        # 👑 STREAMLIT CLOUD FALLBACK BACKUP
-        ELIF "GCP_SERVICE_ACCOUNT" IN ST.SECRETS:
-            CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_DICT(DICT(ST.SECRETS["GCP_SERVICE_ACCOUNT"]), SCOPE)
-        # 🪵 LOCAL PC DEVELOPMENT FILES
-        ELSE:
-            CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_NAME("CREDENTIALS.JSON", SCOPE)
+        position_line_chart = alt.Chart(line_data).mark_line(point=True, strokeWidth=3).encode(
+            x=alt.X("Date:N", title="Game Date"),
+            y=alt.Y("Position:Q", title="Finishing Place", sort="descending", scale=alt.Scale(domain=[1, int(df_history["Position"].max())]), axis=alt.Axis(tickMinStep=1)),
+            color=alt.Color("Player Name:N", title="Players"),
+            tooltip=["Date", "Player Name", "Position"]
+        ).properties(height=320).interactive()
         
-        CLIENT = GSPREAD.AUTHORIZE(CREDS)
-        WORKBOOK = CLIENT.OPEN("DIRTY TOWN POKER LEAGUE INPUT (RESPONSES)")
-        REG_SHEET = WORKBOOK.WORKSHEET("REGISTRY")
-        RECORDS = REG_SHEET.GET_ALL_RECORDS()
-        RETURN [STR(ROW["FULL NAME"]).STRIP() FOR ROW IN RECORDS IF ROW.GET("FULL NAME")]
-    EXCEPT EXCEPTION:
-        RETURN ["BRIAN COX", "DUSTAN MULKEY", "MIKE CRAFT", "JEFF MCCLEAVE"]
+        with st.container():
+            st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+            st.altair_chart(position_line_chart, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-PLAYER_REGISTRY = LOAD_PLAYER_REGISTRY()
-
-DEF CALCULATE_POKER_POINTS(TOTAL_PLAYERS, RANK):
-    BUY_INS = INT(TOTAL_PLAYERS)
-    RANK = INT(RANK)
-    LEAGUE_MATRIX = {
-        6:  [371, 226, 156, 121, 110, 100], 7:  [460, 282, 195, 143, 119, 110, 100], 
-        8:  [558, 343, 240, 174, 135, 118, 110, 100], 9:  [664, 410, 290, 213, 160, 132, 118, 110, 100],
-        10: [777, 483, 344, 256, 193, 151, 129, 119, 111, 100], 11: [897, 560, 402, 303, 231, 178, 146, 128, 119, 111, 100],
-        12: [1020, 642, 465, 353, 273, 212, 168, 142, 128, 119, 111, 100], 13: [1146, 728, 531, 406, 318, 249, 197, 161, 140, 128, 120, 111, 100],
-        14: [1272, 820, 601, 463, 365, 290, 230, 185, 156, 138, 128, 120, 111, 100], 15: [1398, 915, 674, 524, 416, 334, 268, 215, 177, 153, 137, 128, 120, 111, 100],
-        16: [1523, 1015, 750, 587, 469, 380, 308, 249, 203, 171, 150, 137, 128, 120, 111, 100], 17: [1649, 1120, 830, 652, 525, 428, 351, 286, 233, 194, 166, 149, 137, 128, 121, 111, 100],
-        18: [1775, 1228, 912, 721, 584, 479, 396, 326, 268, 221, 187, 163, 147, 137, 129, 121, 112, 100], 19: [1900, 1340, 998, 792, 645, 532, 442, 368, 305, 252, 211, 181, 161, 147, 137, 129, 121, 112, 100],
-        20: [2028, 1456, 1101, 866, 710, 588, 491, 413, 345, 287, 239, 203, 178, 158, 147, 137, 129, 121, 112, 100], 21: [2124, 1547, 1182, 934, 770, 642, 539, 456, 385, 322, 270, 227, 197, 174, 157, 147, 137, 129, 121, 112, 100],
-        22: [2327, 1716, 1322, 1050, 867, 727, 612, 520, 442, 373, 313, 263, 224, 196, 174, 159, 149, 139, 131, 122, 113, 100], 23: [2428, 1813, 1409, 1126, 932, 786, 666, 567, 486, 413, 350, 295, 250, 217, 192, 174, 157, 147, 137, 129, 121, 112, 100],
-        24: [2529, 1910, 1496, 1203, 999, 847, 721, 617, 531, 456, 388, 330, 280, 240, 211, 187, 169, 159, 148, 139, 131, 123, 113, 100], 25: [2630, 2008, 1584, 1282, 1066, 908, 777, 668, 577, 499, 429, 366, 312, 267, 232, 206, 184, 169, 158, 148, 140, 132, 123, 113, 100],
-        26: [2732, 2106, 1673, 1362, 1136, 971, 835, 720, 624, 543, 470, 404, 347, 297, 256, 226, 202, 181, 168, 158, 148, 140, 132, 123, 113, 100], 27: [2833, 2204, 1763, 1443, 1206, 1034, 894, 774, 673, 588, 513, 444, 383, 329, 284, 248, 221, 197, 179, 168, 158, 148, 140, 132, 123, 113, 100],
-        28: [2934, 2303, 1853, 1525, 1279, 1098, 953, 829, 724, 634, 556, 485, 420, 363, 314, 273, 241, 216, 194, 178, 168, 158, 148, 141, 132, 123, 113, 100], 29: [3035, 2402, 1944, 1608, 1352, 1164, 1014, 886, 775, 681, 600, 527, 459, 399, 346, 300, 263, 235, 211, 191, 178, 168, 157, 149, 141, 132, 124, 113, 100],
-        30: [3137, 2500, 2035, 1692, 1427, 1231, 1076, 943, 828, 730, 645, 570, 500, 437, 380, 331, 289, 256, 230, 207, 189, 178, 167, 157, 149, 141, 133, 124, 113, 100]
-    }
-    RETURN LEAGUE_MATRIX.GET(BUY_INS, [100])[RANK - 1] IF RANK <= BUY_INS ELSE 100
-
-GLOBAL_WORKBOOK_INSTANCE = NONE
-
-@ST.CACHE_DATA(TTL=600)
-DEF GET_RAW_FORM_RESPONSES(WORKSHEET_NAME):
-    GLOBAL GLOBAL_WORKBOOK_INSTANCE
-    SCOPE = ["HTTPS://SPREADSHEETS.GOOGLE.COM/FEEDS", "HTTPS://WWW.GOOGLEAPIS.COM/AUTH/DRIVE"]
-    TRY:
-        # 🔑 RENDER ENVIRONMENT CHECKER FIRST
-        IF "GCP_SERVICE_ACCOUNT" IN OS.ENVIRON:
-            CREDS_DICT = JSON.LOADS(OS.ENVIRON["GCP_SERVICE_ACCOUNT"])
-            CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_DICT(CREDS_DICT, SCOPE)
-        # 👑 STREAMLIT CLOUD FALLBACK BACKUP
-        ELIF "GCP_SERVICE_ACCOUNT" IN ST.SECRETS:
-            CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_DICT(DICT(ST.SECRETS["GCP_SERVICE_ACCOUNT"]), SCOPE)
-        # 🪵 LOCAL PC DEVELOPMENT FILES
-        ELSE:
-            CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_NAME("CREDENTIALS.JSON", SCOPE)
-    EXCEPT EXCEPTION:
-        CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_NAME("CREDENTIALS.JSON", SCOPE)
+    # -----------------------------------------------------------------
+    # 🔮 LEAGUE ARCHETYPES BUBBLE CHART
+    # -----------------------------------------------------------------
+    st.markdown("---")
+    st.subheader("🔮 League Activity vs Efficiency Matrix")
     
-    CLIENT = GSPREAD.AUTHORIZE(CREDS)
-    WORKBOOK = CLIENT.OPEN("DIRTY TOWN POKER LEAGUE INPUT (RESPONSES)")
-    GLOBAL_WORKBOOK_INSTANCE = WORKBOOK  
-    SHEET = WORKBOOK.WORKSHEET(WORKSHEET_NAME)
-    RETURN SHEET.GET_ALL_VALUES()
+    min_games, max_games_track = int(leaderboard["Games Played"].min()), int(leaderboard["Games Played"].max())
+    min_pts, max_pts_track = int(leaderboard["Total Points"].min()), int(leaderboard["Total Points"].max())
 
-BASE_SORTED_LEADERBOARD = PD.DATAFRAME()
-LEADERBOARD = PD.DATAFRAME()
-DF_HISTORY = PD.DATAFRAME()
-LAST_GAME_DATE = NONE
-CLEANED_ROWS = []
-
-# =========================================================================
-# 💾 DATA COMPILATION & PARSING ENGINE (REGULAR SEASON ONLY)
-# =========================================================================
-TRY:
-    RAW_ROWS = GET_RAW_FORM_RESPONSES(TARGET_WORKSHEET)
-    CLEANED_ROWS = [R FOR R IN RAW_ROWS IF ANY(CELL.STRIP() FOR CELL IN R)]
+    bubble_chart = alt.Chart(leaderboard).mark_circle().encode(
+        x=alt.X("Games Played:Q", title="Total Attendance (Games)", scale=alt.Scale(domain=[max(0, min_games - 1), max_games_track + 1]), axis=alt.Axis(tickMinStep=1)),
+        y=alt.Y("Total Points:Q", title="Total Points Accumulated", scale=alt.Scale(domain=[max(0, min_pts - 500), max_pts_track + 1000])),
+        size=alt.Size("Avg Points/Game:Q", title="Efficiency", scale=alt.Scale(range=[100, 1000])),
+        color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
+        tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
+    ).properties(height=340).interactive()
     
-    IF LEN(CLEANED_ROWS) <= 1:
-        ST.WARNING(F"NO SUBMISSIONS FOUND IN YOUR GOOGLE FORM FOR {SELECTED_SEASON} YET!")
-        LEADERBOARD = PD.DATAFRAME(COLUMNS=["PLAYER NAME", "TOTAL POINTS", "GAMES PLAYED", "🥇 1ST", "🥈 2ND", "🥉 3RD", "FINAL TABLES", "AVG POINTS/GAME", "LAST GAME POINTS"])
-        DF_HISTORY = PD.DATAFRAME(COLUMNS=["DATE", "PLAYER NAME", "POSITION", "POINTS"])
-        BASE_SORTED_LEADERBOARD = LEADERBOARD
-    ELSE:
-        PARSED_HISTORY_RECORDS = []
-        
-        FOR ROW IN CLEANED_ROWS[1:]:
-            GAME_DATE = STR(ROW[1]).STRIP() IF LEN(ROW) >= 3 ELSE STR(ROW[0]).STRIP()
-            RAW_STANDINGS_TEXT = ROW[2] IF LEN(ROW) >= 3 ELSE ROW[1]
-            
-            RAW_LIST = [LINE.STRIP() FOR LINE IN STR(RAW_STANDINGS_TEXT).SPLIT('\N') IF LINE.STRIP()]
-            IF NOT RAW_LIST:
-                CONTINUE
-                
-            TOTAL_PLAYERS = LEN(RAW_LIST)
-            FOR INDEX, RAW_PLAYER_INPUT IN ENUMERATE(RAW_LIST):
-                POSITION = INDEX + 1
-                POINTS = CALCULATE_POKER_POINTS(TOTAL_PLAYERS, POSITION)
-                
-                PLAYER_NAME = STR(RAW_PLAYER_INPUT).STRIP().REPLACE("\R", "").TITLE()
-                IF " MCC" IN PLAYER_NAME:
-                    PLAYER_NAME = PLAYER_NAME.REPLACE(" MCC", " MCC")
-                ELIF PLAYER_NAME.STARTSWITH("MCC"):
-                    PLAYER_NAME = "MCC" + PLAYER_NAME[3:]
-                
-                PARSED_HISTORY_RECORDS.APPEND({
-                    "DATE": GAME_DATE.SPLIT()[0],
-                    "PLAYER NAME": PLAYER_NAME, 
-                    "POSITION": INT(POSITION), 
-                    "POINTS": INT(POINTS)
-                })
-        
-        DF_HISTORY = PD.DATAFRAME(PARSED_HISTORY_RECORDS)
-        
-        # -----------------------------------------------------------------
-        # PODIUM & STATISTICS AGGREGATION ENGINE
-        # -----------------------------------------------------------------
-        DF_HISTORY['TRUE_DATE'] = PD.TO_DATETIME(DF_HISTORY['DATE'], ERRORS='COERCE')
-        UNIQUE_DATES_SORTED = SORTED(DF_HISTORY["TRUE_DATE"].DROPNA().UNIQUE())
-        
-        IF UNIQUE_DATES_SORTED:
-            LAST_GAME_DATE_RAW = UNIQUE_DATES_SORTED[-1]
-            LAST_GAME_DATE = LAST_GAME_DATE_RAW.STRFTIME('%Y-%m-%D')
-            
-            DF_LAST_GAME = DF_HISTORY[DF_HISTORY["TRUE_DATE"] == LAST_GAME_DATE_RAW][["PLAYER NAME", "POINTS"]].COPY()
-            DF_LAST_GAME.COLUMNS = ["PLAYER NAME", "LAST GAME POINTS"]
-        ELSE:
-            DF_LAST_GAME = PD.DATAFRAME(COLUMNS=["PLAYER NAME", "LAST GAME POINTS"])
-
-        DF_HISTORY["🥇 1ST"] = DF_HISTORY["POSITION"].APPLY(LAMBDA X: 1 IF X == 1 ELSE 0)
-        DF_HISTORY["🥈 2ND"] = DF_HISTORY["POSITION"].APPLY(LAMBDA X: 1 IF X == 2 ELSE 0)
-        DF_HISTORY["🥉 3RD"] = DF_HISTORY["POSITION"].APPLY(LAMBDA X: 1 IF X == 3 ELSE 0)
-        DF_HISTORY["FT"] = DF_HISTORY["POSITION"].APPLY(LAMBDA X: 1 IF X <= 10 ELSE 0)
-        
-        LEADERBOARD = DF_HISTORY.GROUPBY("PLAYER NAME").AGG(
-            TOTAL_POINTS=("POINTS", "SUM"),
-            GAMES_PLAYED=("DATE", "COUNT"),
-            WINS=("🥇 1ST", "SUM"),
-            SECONDS=("🥈 2ND", "SUM"),
-            THIRDS=("🥉 3RD", "SUM"),
-            FINAL_TABLES=("FT", "SUM")
-        ).RESET_INDEX()
-        
-        LEADERBOARD["AVG POINTS/GAME"] = (LEADERBOARD["TOTAL_POINTS"] / LEADERBOARD["GAMES_PLAYED"]).ROUND(1)
-        
-        LEADERBOARD = PD.MERGE(LEADERBOARD, DF_LAST_GAME, ON="PLAYER NAME", HOW="LEFT")
-        LEADERBOARD["LAST GAME POINTS"] = LEADERBOARD["LAST GAME POINTS"].FILLNA(0).ASTYPE(INT)
-        
-        LEADERBOARD.COLUMNS = ["PLAYER NAME", "TOTAL POINTS", "GAMES PLAYED", "🥇 1ST", "🥈 2ND", "🥉 3RD", "FINAL TABLES", "AVG POINTS/GAME", "LAST GAME POINTS"]
-        BASE_SORTED_LEADERBOARD = LEADERBOARD.SORT_VALUES(BY="TOTAL POINTS", ASCENDING=FALSE).RESET_INDEX(DROP=True)
-
-        # -----------------------------------------------------------------
-        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER (SPLIT SEASON 48 BANNER)
-        # -----------------------------------------------------------------
-        TOTAL_GAMES_PLAYED = MAX(0, LEN(CLEANED_ROWS) - 1)
-        
-        IF SELECTED_SEASON == "SEASON XLVII (ARCHIVED)":
-            ST.SUCCESS(
-                "🃏 **SEASON XLVII COMPLETED:** 17 REGULAR SEASON GAMES ARE IN THE ARCHIVES.\N\N"
-                "🏆 **GRAND CHAMPION:** DUSTAN MULKEY"
-            )
-        ELIF TOTAL_GAMES_PLAYED > 0:
-            # 🟢 FIRST BANNER: JUST THE GAME COUNTER
-            ST.SUCCESS(F"🃏 **{SELECTED_SEASON.SPLIT(' (')[0].UPPER()} UNDERWAY:** GAME {TOTAL_GAMES_PLAYED} IS OFFICIALLY IN THE BOOKS! CHECK THE UPDATED STANDINGS BELOW.")
-            
-            # 🔵 SECOND BANNER: DEDICATED ATTENDANCE NOTE
-            ST.INFO("📌 **NOTE:** IF YOU KNOW YOU WILL NOT BE ABLE TO ATTEND THIS WEEK'S GAME, PLEASE NOTIFY CO-COMMISSIONER **TODD KINSELL** 💼 AS EARLY AS POSSIBLE! 🏃‍♂️")
-        ELSE:
-            ST.SUCCESS(F"🃏 **{SELECTED_SEASON.SPLIT(' (')[0].UPPER()}:** STAGED AND READY FOR ACTION. SHUFFLE UP AND DEAL! 🚀")      
-        
-        # -----------------------------------------------------------------
-        # METRICS SHELF
-        # -----------------------------------------------------------------
-        IF NOT BASE_SORTED_LEADERBOARD.EMPTY:
-            ST.MARKDOWN("### 👑 SEASON MILESTONES & MANAGEMENT")
-            M_COL1, M_COL2, M_COL3, M_COL4 = ST.COLUMNS(4)
-            
-            CURRENT_LEADER = BASE_SORTED_LEADERBOARD.ILOC[0]["PLAYER NAME"]
-            
-            WIN_SORTED = LEADERBOARD.SORT_VALUES(BY="🥇 1ST", ASCENDING=FALSE)
-            WIN_BOSS = WIN_SORTED.ILOC[0]["PLAYER NAME"] IF NOT WIN_SORTED.EMPTY ELSE "N/A"
-            WIN_COUNT = WIN_SORTED.ILOC[0]["🥇 1ST"] IF NOT WIN_SORTED.EMPTY ELSE 0
-            
-            WITH M_COL1:
-                ST.METRIC("LEAGUE LEADER 🥇", CURRENT_LEADER, F"{BASE_SORTED_LEADERBOARD.ILOC[0]['TOTAL POINTS']} PTS")
-            WITH M_COL2:
-                ST.METRIC("CHAMPIONSHIP WINS 🏆", WIN_BOSS, F"{WIN_COUNT} WINS")
-            WITH M_COL3:
-                ST.METRIC("COMMISSIONER 📋", "MICHAEL CRAFT", "LEAGUE ADMIN")
-            WITH M_COL4:
-                ST.METRIC("CO-COMMISSIONER 💼", "TODD KINSELL", "LEAGUE ADMIN")
-
-EXCEPT EXCEPTION AS DATA_LOAD_ERROR:
-    ST.ERROR(F"COULD NOT LOAD SHEETS BACKEND DATABASE ENGINE: {DATA_LOAD_ERROR}")
-
-# =========================================================================
-# 🏆 1. OVERALL SEASON RANKINGS LEADERBOARD (PRIMARY FOCUS)
-# =========================================================================
-IF NOT BASE_SORTED_LEADERBOARD.EMPTY:
-    ST.MARKDOWN("---")
-    ST.SUBHEADER("📋 OVERALL SEASON RANKINGS")
-    
-    DISPLAY_LEADERBOARD = LEADERBOARD.SORT_VALUES(BY="TOTAL POINTS", ASCENDING=FALSE).RESET_INDEX(DROP=True)
-    DISPLAY_LEADERBOARD.INDEX = DISPLAY_LEADERBOARD.INDEX + 1
-    
-    # 🗓️ DYNAMIC SEASON WEEKS CALIBRATOR
-    IF "SEASON XLVIII" IN SELECTED_SEASON:
-        SEASON_TOTAL_WEEKS = 18   # CURRENT SEASON
-    ELIF "SEASON XLVII" IN SELECTED_SEASON:
-        SEASON_TOTAL_WEEKS = 17   # ARCHIVED SEASON
-    ELSE:
-        SEASON_TOTAL_WEEKS = 18   # FUTURE SEASON XLIX DEFAULT FALLBACK
-
-    DISPLAY_LEADERBOARD["GAMES PLAYED FORMAT"] = DISPLAY_LEADERBOARD["GAMES PLAYED"].APPLY(LAMBDA X: F"{INT(X)} / {SEASON_TOTAL_WEEKS}")
-    
-    FINAL_TABLE_DF = DISPLAY_LEADERBOARD[[
-        "PLAYER NAME", "TOTAL POINTS", "LAST GAME POINTS", 
-        "GAMES PLAYED FORMAT", "🥇 1ST", "🥈 2ND", "🥉 3RD", "FINAL TABLES", "GAMES PLAYED"
-    ]]
-
-    DEF HIGHLIGHT_LAST_GAME(VAL):
-        RETURN 'BACKGROUND-COLOR: RGBA(46, 204, 113, 0.15); FONT-WEIGHT: BOLD;' IF VAL > 0 ELSE ''
-
-    DEF HIGHLIGHT_LOW_ATTENDANCE(ROW):
-        STYLES = [''] * LEN(ROW)
-        IDX = ROW.INDEX.GET_LOC("GAMES PLAYED FORMAT")
-        
-        IF ROW["GAMES PLAYED"] <= 7:
-            # 🚨 UNDER-ATTENDED WARNING STATE
-            STYLES[IDX] = 'BACKGROUND-COLOR: RGBA(231, 76, 60, 0.18); FONT-WEIGHT: BOLD; COLOR: #FF7675;'
-        ELSE:
-            # 🎉 QUALIFIED MILESTONE STATE (8+ GAMES PLAYED)
-            STYLES[IDX] = 'BACKGROUND-COLOR: RGBA(46, 204, 113, 0.12); FONT-WEIGHT: BOLD; COLOR: #2ED573;'
-            
-        RETURN STYLES
-
-    STYLED_DF = FINAL_TABLE_DF.STYLE\
-        .MAP(HIGHLIGHT_LAST_GAME, SUBSET=["LAST GAME POINTS"])\
-        .APPLY(HIGHLIGHT_LOW_ATTENDANCE, AXIS=1)
-        
-    ST.DATAFRAME(
-        STYLED_DF, 
-        USE_CONTAINER_WIDTH=TRUE,
-        HIDE_INDEX=FALSE,
-        COLUMN_CONFIG={
-            "PLAYER NAME": ST.COLUMN_CONFIG.TEXTCOLUMN("♠️ PLAYER"),
-            "TOTAL POINTS": ST.COLUMN_CONFIG.NUMBERCOLUMN("🔥 TOTAL POINTS", FORMAT="%D PTS"),
-            "LAST GAME POINTS": ST.COLUMN_CONFIG.NUMBERCOLUMN("💥 LAST GAME", FORMAT="+%D"),
-            "🥇 1ST": ST.COLUMN_CONFIG.NUMBERCOLUMN(ALIGNMENT="CENTER"),
-            "🥈 2ND": ST.COLUMN_CONFIG.NUMBERCOLUMN(ALIGNMENT="CENTER"),
-            "🥉 3RD": ST.COLUMN_CONFIG.NUMBERCOLUMN(ALIGNMENT="CENTER"),
-            "FINAL TABLES": ST.COLUMN_CONFIG.NUMBERCOLUMN("🃏 FT", ALIGNMENT="CENTER"),
-            "GAMES PLAYED FORMAT": ST.COLUMN_CONFIG.TEXTCOLUMN("🏃‍♂️ PLAYED", ALIGNMENT="CENTER"),
-            "GAMES PLAYED": NONE
-        }
-    )
-
-# =========================================================================
-# 🎉 NIGHTLY BOUNTIES & WILDCARDS
-# =========================================================================
-IF LEN(CLEANED_ROWS) > 1:
-    ST.MARKDOWN("---")
-    ST.SUBHEADER("🎉 NIGHTLY SPECIALS & SPECIAL BOUNTIES")
-    
-    HIGH_HAND_RECORDS = []
-    SPIN_WHEEL_RECORDS = []
-    
-    FOR ROW IN CLEANED_ROWS[1:]:
-        GAME_DATE = STR(ROW[1]).STRIP().SPLIT()[0] IF LEN(ROW) >= 3 ELSE STR(ROW[0]).STRIP().SPLIT()[0]
-        
-        IF LEN(ROW) >= 4 AND ROW[3].STRIP():
-            RAW_TEXT = ROW[3].STRIP()
-            FOR LINE IN RAW_TEXT.SPLIT('\N'):
-                IF NOT LINE.STRIP(): CONTINUE
-                IF "-" IN LINE:
-                    PARTS = LINE.SPLIT("-", 1)
-                    INPUT_NAME = PARTS[0].STRIP().TITLE()
-                    PRIZE_TEXT = PARTS[1].STRIP()
-                ELSE:
-                    INPUT_NAME = LINE.STRIP().TITLE()
-                    PRIZE_TEXT = "PRIZE LOGGED"
-                HIGH_HAND_RECORDS.APPEND({"DATE": GAME_DATE, "PLAYER NAME": INPUT_NAME, "PRIZE WON": PRIZE_TEXT})
-            
-        IF LEN(ROW) >= 5 AND ROW[4].STRIP():
-            RAW_TEXT = ROW[4].STRIP()
-            FOR LINE IN RAW_TEXT.SPLIT('\N'):
-                IF NOT LINE.STRIP(): CONTINUE
-                IF "-" IN LINE:
-                    PARTS = LINE.SPLIT("-", 1)
-                    INPUT_NAME = PARTS[0].STRIP().TITLE()
-                    PRIZE_TEXT = PARTS[1].STRIP()
-                ELSE:
-                    INPUT_NAME = LINE.STRIP().TITLE()
-                    PRIZE_TEXT = "PRIZE LOGGED"
-                SPIN_WHEEL_RECORDS.APPEND({"DATE": GAME_DATE, "PLAYER NAME": INPUT_NAME, "PRIZE WON": PRIZE_TEXT})
-            
-    W_COL1, W_COL2 = ST.COLUMNS(2)
-    WITH W_COL1:
-        ST.MARKDOWN("### 🪵 HIGH HAND ELITE LOGS")
-        IF HIGH_HAND_RECORDS:
-            DF_HH = PD.DATAFRAME(HIGH_HAND_RECORDS).SORT_VALUES(BY="DATE", ASCENDING=FALSE)
-            ST.DATAFRAME(DF_HH, USE_CONTAINER_WIDTH=TRUE, HIDE_INDEX=TRUE)
-        ELSE:
-            ST.INFO("NO HIGH HAND RECORDS LOGGED YET FOR THIS SEASON.")
-            
-    WITH W_COL2:
-        ST.MARKDOWN("### 🎡 ACE OF SPADES WHEEL SPINS")
-        IF SPIN_WHEEL_RECORDS:
-            DF_SW = PD.DATAFRAME(SPIN_WHEEL_RECORDS).SORT_VALUES(BY="DATE", ASCENDING=FALSE)
-            ST.DATAFRAME(DF_SW, USE_CONTAINER_WIDTH=TRUE, HIDE_INDEX=TRUE)
-        ELSE:
-            ST.INFO("NO SPADE ACE WHEEL DRAWS TRACKED YET FOR THIS SEASON.")
+    with st.container():
+        st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+        st.altair_chart(bubble_chart, use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================================================================
 # 🔐 SECURE ADMIN DIRECT INPUT PANEL (BYPASSES GOOGLE FORMS)
 # =========================================================================
-ST.MARKDOWN("---")
-WITH ST.EXPANDER("⚙️ SECURE LEAGUE ADMIN PORTAL"):
-    ADMIN_PASSWORD = ST.TEXT_INPUT("ENTER ADMIN PASSWORD:", TYPE="PASSWORD")
+st.markdown("---")
+with st.expander("⚙️ Secure League Admin Portal"):
+    admin_password = st.text_input("Enter Admin Password:", type="password")
     
-    IF ADMIN_PASSWORD == "YOUR_SECRET_PASSWORD": 
-        ST.SUCCESS("ACCESS VERIFIED.")
+    if admin_password == "your_secret_password": 
+        st.success("Access Verified.")
         
-        ST.MARKDOWN("#### 🏃‍♂️ QUICK-ADD NEW SURPRISE PLAYER")
-        NEW_GUEST_NAME = ST.TEXT_INPUT("TYPE FULL NAME OF NEW PLAYER:", PLACEHOLDER="E.G., JOHN DOE")
+        st.markdown("#### 🏃‍♂️ Quick-Add New Surprise Player")
+        new_guest_name = st.text_input("Type Full Name of New Player:", placeholder="e.g., John Doe")
         
-        IF ST.BUTTON("➕ ADD PLAYER TO TONIGHT'S DROPDOWNS"):
-            IF NEW_GUEST_NAME.STRIP():
-                CLEAN_ゲスト = NEW_GUEST_NAME.STRIP().TITLE()
-                IF CLEAN_ゲスト NOT IN ST.SESSION_STATE["TEMPORARY_WALK_INS"] AND CLEAN_ゲスト NOT IN PLAYER_REGISTRY:
-                    ST.SESSION_STATE["TEMPORARY_WALK_INS"].APPEND(CLEAN_ゲスト)
-                    ST.TOAST(F"🎉 {CLEAN_ゲスト} INJECTED INTO DROP-DOWN LISTS!", ICON="🃏")
+        if st.button("➕ Add Player to Tonight's Dropdowns"):
+            if new_guest_name.strip():
+                clean_guest = new_guest_name.strip().title()
+                if clean_guest not in st.session_state["temporary_walk_ins"] and clean_guest not in PLAYER_REGISTRY:
+                    st.session_state["temporary_walk_ins"].append(clean_guest)
+                    st.toast(f"🎉 {clean_guest} injected into drop-down lists!", icon="🃏")
         
-        ST.MARKDOWN("---")
-        ST.MARKDOWN("#### 📋 INPUT TONIGHT'S GAME LEDGER")
+        st.markdown("---")
+        st.markdown("#### 📋 Input Tonight's Game Ledger")
         
-        GAME_DATE_INPUT = ST.DATE_INPUT("SELECT GAME DATE:", VALUE=PD.TIMESTAMP.NOW())
-        FIELD_SIZE = ST.NUMBER_INPUT("TOTAL PLAYERS IN TONIGHT'S FIELD:", MIN_VALUE=2, MAX_VALUE=30, VALUE=30)
+        game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now())
+        field_size = st.number_input("Total Players in Tonight's Field:", min_value=2, max_value=30, value=30)
         
-        AVAILABLE_PLAYERS = SORTED(PLAYER_REGISTRY + ST.SESSION_STATE["TEMPORARY_WALK_INS"])
+        available_players = sorted(PLAYER_REGISTRY + st.session_state["temporary_walk_ins"])
         
-        PLACEMENTS_DATA = []
-        FOR I IN RANGE(INT(FIELD_SIZE)):
-            PLACE = I + 1
-            SELECTABLE_LIST = [P FOR P IN AVAILABLE_PLAYERS IF P NOT IN PLACEMENTS_DATA]
-            SELECTED_PLAYER = ST.SELECTBOX(
-                F"🏅 FINISHED IN PLACE #{PLACE}:", 
-                ["-- SELECT PLAYER --"] + SELECTABLE_LIST,
-                KEY=F"DIRECT_ENTRY_PLACE_{PLACE}"
+        placements_data = []
+        for i in range(int(field_size)):
+            place = i + 1
+            selectable_list = [p for p in available_players if p not in placements_data]
+            selected_player = st.selectbox(
+                f"🏅 Finished in Place #{place}:", 
+                ["-- Select Player --"] + selectable_list,
+                key=f"direct_entry_place_{place}"
             )
-            IF SELECTED_PLAYER != "-- SELECT PLAYER --":
-                PLACEMENTS_DATA.APPEND(SELECTED_PLAYER)
+            if selected_player != "-- Select Player --":
+                placements_data.append(selected_player)
                 
-        ST.MARKDOWN("---")
-        ST.MARKDOWN("#### 🎁 NIGHTLY BOUNTIES & SIDE-BET LOGS")
+        st.markdown("---")
+        st.markdown("#### 🎁 Nightly Bounties & Side-Bet Logs")
         
-        HIGH_HAND_INPUT = ST.TEXT_AREA(
-            "HIGH HAND ELITE LOGS:", 
-            PLACEHOLDER="E.G., BRIAN COX - A/K'S $130\N(TYPE LINE-BY-LINE IF THERE ARE MULTIPLE)",
-            HEIGHT=68
+        high_hand_input = st.text_area(
+            "High Hand Elite Logs:", 
+            placeholder="e.g., Brian Cox - A/K's $130\n(Type line-by-line if there are multiple)",
+            height=68
         )
         
-        WHEEL_SPIN_INPUT = ST.TEXT_AREA(
-            "ACE OF SPADES WHEEL SPINS:", 
-            PLACEHOLDER="E.G., STEVE BATTARD - SIT! BY THE FRIDGE.",
-            HEIGHT=68
+        wheel_spin_input = st.text_area(
+            "Ace of Spades Wheel Spins:", 
+            placeholder="e.g., Steve Battard - Sit! by the fridge.",
+            height=68
         )
         
-        IF ST.BUTTON("🚀 POST OFFICIAL GAME RESULTS TO GOOGLE SHEETS"):
-            IF LEN(PLACEMENTS_DATA) == FIELD_SIZE AND LEN(SET(PLACEMENTS_DATA)) == FIELD_SIZE:
-                TRY:
-                    SCOPE = ["HTTPS://SPREADSHEETS.GOOGLE.COM/FEEDS", "HTTPS://WWW.GOOGLEAPIS.COM/AUTH/DRIVE"]
+        if st.button("🚀 Post Official Game Results to Google Sheets"):
+            if len(placements_data) == field_size and len(set(placements_data)) == field_size:
+                try:
+                    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
                     
                     # 🔑 RENDER ENVIRONMENT CHECKER FIRST
-                    IF "GCP_SERVICE_ACCOUNT" IN OS.ENVIRON:
-                        CREDS_DICT = JSON.LOADS(OS.ENVIRON["GCP_SERVICE_ACCOUNT"])
-                        CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_DICT(CREDS_DICT, SCOPE)
+                    if "gcp_service_account" in os.environ:
+                        creds_dict = json.loads(os.environ["gcp_service_account"])
+                        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
                     # 👑 STREAMLIT CLOUD FALLBACK BACKUP
-                    ELIF "GCP_SERVICE_ACCOUNT" IN ST.SECRETS:
-                        CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_DICT(DICT(ST.SECRETS["GCP_SERVICE_ACCOUNT"]), SCOPE)
+                    elif "gcp_service_account" in st.secrets:
+                        creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
                     # 🪵 LOCAL PC DEVELOPMENT FILES
-                    ELSE:
-                        CREDS = SERVICEACCOUNTCREDENTIALS.FROM_JSON_KEYFILE_NAME("CREDENTIALS.JSON", SCOPE)
+                    else:
+                        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
                     
-                    CLIENT = GSPREAD.AUTHORIZE(CREDS)
-                    ACTIVE_WORKBOOK = CLIENT.OPEN("DIRTY TOWN POKER LEAGUE INPUT (RESPONSES)")
+                    client = gspread.authorize(creds)
+                    active_workbook = client.open("Dirty Town Poker League Input (Responses)")
                     
-                    REG_SHEET = ACTIVE_WORKBOOK.WORKSHEET("REGISTRY")
-                    FOR NAME IN PLACEMENTS_DATA:
-                        IF NAME NOT IN PLAYER_REGISTRY:
-                            REG_SHEET.APPEND_ROW([NAME])
+                    reg_sheet = active_workbook.worksheet("Registry")
+                    for name in placements_data:
+                        if name not in PLAYER_REGISTRY:
+                            reg_sheet.append_row([name])
                     
-                    FORMATTED_STANDINGS = "\N".JOIN(PLACEMENTS_DATA)
-                    SHEET = ACTIVE_WORKBOOK.WORKSHEET(TARGET_WORKSHEET)
+                    formatted_standings = "\n".join(placements_data)
+                    sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                     
-                    NEXT_OPEN_ROW = LEN(SHEET.GET_ALL_VALUES()) + 1
+                    next_open_row = len(sheet.get_all_values()) + 1
                     
-                    ROW_VALUES = [
-                        STR(GAME_DATE_INPUT), 
-                        STR(GAME_DATE_INPUT), 
-                        FORMATTED_STANDINGS, 
-                        HIGH_HAND_INPUT.STRIP(), 
-                        WHEEL_SPIN_INPUT.STRIP()
+                    row_values = [
+                        str(game_date_input), 
+                        str(game_date_input), 
+                        formatted_standings, 
+                        high_hand_input.strip(), 
+                        wheel_spin_input.strip()
                     ]
                     
-                    SHEET.INSERT_ROW(ROW_VALUES, INDEX=NEXT_OPEN_ROW, VALUE_INPUT_OPTION="USER_ENTERED")
+                    sheet.insert_row(row_values, index=next_open_row, value_input_option="USER_ENTERED")
                     
-                    ST.BALLOONS()
-                    ST.SUCCESS("GAME POSTED AND NEW PLAYERS PERMANENTLY REGISTERED!")
-                    ST.CACHE_DATA.CLEAR()
-                    ST.SESSION_STATE["TEMPORARY_WALK_INS"] = [] 
-                    ST.RERUN()
-                EXCEPT EXCEPTION AS APPEND_ERR:
-                    ST.ERROR(F"FAILED TO POST DATA: {APPEND_ERR}")
-            ELSE:
-                ST.ERROR("ERROR: PLEASE MAKE SURE ALL PLACEMENTS ARE COMPLETELY FILLED WITH NO DUPLICATE PLAYERS.")
+                    st.balloons()
+                    st.success("Game posted and new players permanently registered!")
+                    st.cache_data.clear()
+                    st.session_state["temporary_walk_ins"] = [] 
+                    st.rerun()
+                except Exception as append_err:
+                    st.error(f"Failed to post data: {append_err}")
+            else:
+                st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
 
 # =========================================================================
 # 🔄 ARCHIVE NAVIGATION SYSTEM (BOTTOM OF PAGE)
 # =========================================================================
-ST.MARKDOWN("---")
-ST.MARKDOWN("### 🗂️ LEAGUE HISTORY ARCHIVE")
+st.markdown("---")
+st.markdown("### 🗂️ League History Archive")
 
-SEASON_OPTIONS = [
-    "SEASON XLVIII (CURRENT)", 
-    "SEASON XLIX (UPCOMING)", 
-    "SEASON XLVII (ARCHIVED)"
+season_options = [
+    "Season XLVIII (Current)", 
+    "Season XLIX (Upcoming)", 
+    "Season XLVII (Archived)"
 ]
 
-TRY:
-    CURRENT_INDEX = SEASON_OPTIONS.INDEX(ST.SESSION_STATE["ACTIVE_SEASON_CHOICE"])
-EXCEPT VALUEERROR:
-    CURRENT_INDEX = 0
+try:
+    current_index = season_options.index(st.session_state["active_season_choice"])
+except ValueError:
+    current_index = 0
 
-SEASON_TOGGLE = ST.SELECTBOX(
-    "🍂 TOGGLE ACTIVE LEAGUE SEASON DASHBOARD VIEW:",
-    SEASON_OPTIONS,
-    INDEX=CURRENT_INDEX
+season_toggle = st.selectbox(
+    "🍂 Toggle Active League Season Dashboard View:",
+    season_options,
+    index=current_index
 )
 
-IF SEASON_TOGGLE != ST.SESSION_STATE["ACTIVE_SEASON_CHOICE"]:
-    ST.SESSION_STATE["ACTIVE_SEASON_CHOICE"] = SEASON_TOGGLE
-    ST.RERUN()
+if season_toggle != st.session_state["active_season_choice"]:
+    st.session_state["active_season_choice"] = season_toggle
+    st.rerun()
 
 # -----------------------------------------------------------------
 # 🛡️ LEAGUE INFO FOOTER 
 # -----------------------------------------------------------------
-ST.MARKDOWN("---")
-ST.INFO(
-    "📋 **LEAGUE NOTICE:** FOR SCHEDULE CHANGES, BLIND STRUCTURE, OR DISPUTE RESOLUTION, "
-    "PLEASE CONTACT YOUR LEAGUE COMMISSIONER: **MICHAEL STEPHEN CRAFT** 👑. "
-    "IF YOU KNOW YOU WILL **NOT** BE ABLE TO ATTEND THIS WEEK'S GAME, PLEASE NOTIFY "
-    "CO-COMMISSIONER **TODD KINSELL** 💼 AS EARLY AS POSSIBLE! 🏃‍♂️"
+st.markdown("---")
+st.info(
+    "📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, "
+    "please contact your League Commissioner: **Michael Stephen Craft** 👑. "
+    "If you know you will **not** be able to attend this week's game, please notify "
+    "Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️"
 )
