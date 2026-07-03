@@ -99,7 +99,7 @@ st.markdown(
 # =========================================================================
 # 🔄 DYNAMIC REGISTRY LOADER
 # =========================================================================
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=3600)
 def load_player_registry():
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
