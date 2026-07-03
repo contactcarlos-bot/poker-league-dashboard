@@ -19,13 +19,6 @@ if "active_season_choice" not in st.session_state:
 
 selected_season = st.session_state["active_season_choice"]
 
-# 🔒 FORCE RESET ALL STORAGE STATE PER RERUN TO PREVENT ARCHIVE BLEEDING
-base_sorted_leaderboard = pd.DataFrame()
-leaderboard = pd.DataFrame()
-df_history = pd.DataFrame()
-last_game_date = None
-cleaned_rows = []
-
 # =========================================================================
 # 🗓️ CHOOSE TARGET WORKSHEET
 # =========================================================================
@@ -99,7 +92,7 @@ st.markdown(
 # =========================================================================
 # 🔄 DYNAMIC REGISTRY LOADER
 # =========================================================================
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=600)  # 🏎️ Speed optimized: registry cached for 10 min instead of 60 seconds
 def load_player_registry():
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -167,12 +160,25 @@ def get_raw_form_responses(worksheet_name):
 # =========================================================================
 # 💾 DATA COMPILATION & PARSING ENGINE (REGULAR SEASON ONLY)
 # =========================================================================
+# 🔒 INITIALIZE CLEAN SCRATCHPAD ENTIRELY AT THE START OF DISCOVERY LOOP
+base_sorted_leaderboard = pd.DataFrame()
+leaderboard = pd.DataFrame()
+df_history = pd.DataFrame()
+last_game_date = None
+cleaned_rows = []
+
 try:
     raw_rows = get_raw_form_responses(TARGET_WORKSHEET)
     cleaned_rows = [r for r in raw_rows if any(cell.strip() for cell in r)]
     
     if len(cleaned_rows) <= 1:
-        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER FOR EMPTY SEASONS (E.G. S49 PRE-START)
+        # 🔒 FORCE ABSOLUTE BLANK STATES FOR NEW/EMPTY SEASONS TO PREVENT RAM CACHE BLEEDING
+        leaderboard = pd.DataFrame(columns=["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"])
+        df_history = pd.DataFrame(columns=["Date", "Player Name", "Position", "Points"])
+        base_sorted_leaderboard = leaderboard
+        last_game_date = None
+        
+        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER FOR EMPTY SEASONS
         st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")      
     else:
         parsed_history_records = []
@@ -264,7 +270,6 @@ try:
             m_col1, m_col2, m_col3, m_col4 = st.columns(4)
             
             current_leader = base_sorted_leaderboard.iloc[0]["Player Name"]
-            
             win_sorted = leaderboard.sort_values(by="🥇 1st", ascending=False)
             win_boss = win_sorted.iloc[0]["Player Name"] if not win_sorted.empty else "N/A"
             win_count = win_sorted.iloc[0]["🥇 1st"] if not win_sorted.empty else 0
@@ -291,13 +296,12 @@ if not base_sorted_leaderboard.empty:
     display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
     display_leaderboard.index = display_leaderboard.index + 1
     
-    # 🗓️ DYNAMIC SEASON WEEKS CALIBRATOR
     if "Season XLVIII" in selected_season:
-        season_total_weeks = 18   # Current Season
+        season_total_weeks = 18
     elif "Season XLVII" in selected_season:
-        season_total_weeks = 17   # Archived Season
+        season_total_weeks = 17
     else:
-        season_total_weeks = 18   # Future Season XLIX default fallback
+        season_total_weeks = 18
 
     display_leaderboard["Games Played Format"] = display_leaderboard["Games Played"].apply(lambda x: f"{int(x)} / {season_total_weeks}")
     
@@ -312,12 +316,10 @@ if not base_sorted_leaderboard.empty:
     def highlight_low_attendance(row):
         styles = [''] * len(row)
         idx = row.index.get_loc("Games Played Format")
-        
         if row["Games Played"] <= 7:
             styles[idx] = 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;'
         else:
             styles[idx] = 'background-color: rgba(46, 204, 113, 0.12); font-weight: bold; color: #2ed573;'
-            
         return styles
 
     styled_df = final_table_df.style\
@@ -342,10 +344,11 @@ if not base_sorted_leaderboard.empty:
     )
 else:
     if "Season XLIX" in selected_season:
+        st.markdown("---")
         st.info("📊 Standing grids will populate automatically once Game 1 scores are posted by the Commish!")
 
 # =========================================================================
-# 🎉 NIGHTLY BOUNTIES & WILDCARDS (🔒 TIED STRICTLY TO ACTIVE DATA EXISTENCE)
+# 🎉 NIGHTLY BOUNTIES & WILDCARDS (🔒 SECURE VALUE MATCH CHECK)
 # =========================================================================
 if len(cleaned_rows) > 1:
     high_hand_records = []
@@ -486,7 +489,7 @@ else:
         """)
 
 # -----------------------------------------------------------------
-# ⚙️ DASHBOARD CONTROLS (🔒 ONLY SHOW IF HISTORY DATA IS GENERATED)
+# ⚙️ DASHBOARD CONTROLS (🔒 ONLY RENDER IF DATA EXISTS)
 # -----------------------------------------------------------------
 if not df_history.empty and last_game_date:
     st.markdown("---")
@@ -521,7 +524,7 @@ if not df_history.empty and last_game_date:
             st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], use_container_width=True, hide_index=True)
 
 # -----------------------------------------------------------------
-# 📉 WEEKLY POSITION TRACKER LINE GRAPH (🔒 STRICTOR ARCHIVE ISOLATION)
+# 📉 WEEKLY POSITION TRACKER LINE GRAPH (🔒 ARCHIVE ISOLATED ONLY)
 # -----------------------------------------------------------------
 if "Season XLVII" in selected_season:
     if not leaderboard.empty and not df_history.empty:
@@ -532,6 +535,8 @@ if "Season XLVII" in selected_season:
             st.subheader("📉 Weekly Finishing Position History")
             
         df_sorted_dates = df_history.sort_values(by="Date")
+        
+        search_player_placeholder = st.session_state.get("search_player_value", "-- View All --")
         if search_player_placeholder != "-- View All --":
             st.markdown(f"*Tracking finishing trends over time for **{search_player_placeholder}**.*")
             df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"] == search_player_placeholder]
