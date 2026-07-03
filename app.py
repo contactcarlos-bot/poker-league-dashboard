@@ -15,27 +15,6 @@ if "temporary_walk_ins" not in st.session_state:
     st.session_state["temporary_walk_ins"] = []
 
 # =========================================================================
-# 🪓 JAVASCRIPT INJECTION: BREAKS IFRAME TO REMOVE FLOATING TOOLBARS
-# =========================================================================
-from streamlit.components.v1 import html
-html(
-    """
-    <script>
-    const parentDoc = window.parent.document;
-    document.addEventListener("DOMContentLoaded", function() {
-        parentDoc.querySelectorAll('[href*="streamlit.io"]').forEach(el => {
-            const container = el.closest('div');
-            if (container) container.style.display = 'none';
-        });
-        const viewerBadges = parentDoc.querySelectorAll('.viewerBadge, [data-testid="stViewerBadge"]');
-        viewerBadges.forEach(badge => badge.style.display = 'none');
-    });
-    </script>
-    """,
-    height=0, width=0
-)
-
-# =========================================================================
 # 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
 # =========================================================================
 if "active_season_choice" not in st.session_state:
@@ -53,17 +32,13 @@ else:
     TARGET_WORKSHEET = "Form Responses 1"
     st.title("🏆 Dirty Town Poker League - Season XLVII")
 
-
 # =========================================================================
-# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & BRANDING REMOVAL
+# 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & LAYOUT DESIGN
 # =========================================================================
 st.markdown(
     """
     <style>
-    #MainMenu {visibility: hidden !important;}
-    footer {visibility: hidden !important;}
-    header {visibility: hidden !important;}
-
+    /* 🎡 Shrink text sizes inside dataframes */
     div[data-testid="stDataFrameCollapsedCell"] div,
     div[data-testid="stDataFrame"] table,
     .stDataFrame div[data-testid="styled-data-frame"] div {
@@ -76,12 +51,6 @@ st.markdown(
         color: #a4b0be !important;
         margin-top: 10px !important;
     }
-    
-    .stDeployButton {display: none !important;}
-    div[data-testid="stDecoration"] {display: none !important;}
-    .viewerBadge {display: none !important;}
-    div[data-testid="stViewerBadge"] {display: none !important;}
-    button[title="View source on GitHub"] {display: none !important;}
     
     div[data-testid="stDataFrame"] td, 
     div[data-testid="stDataFrame"] th,
@@ -210,10 +179,12 @@ try:
     cleaned_rows = [r for r in raw_rows if any(cell.strip() for cell in r)]
     
     if len(cleaned_rows) <= 1:
-        st.warning(f"No submissions found in your Google Form for {selected_season} yet!")
         leaderboard = pd.DataFrame(columns=["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"])
         df_history = pd.DataFrame(columns=["Date", "Player Name", "Position", "Points"])
         base_sorted_leaderboard = leaderboard
+        
+        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER FOR EMPTY SEASONS (E.G. S49 PRE-START)
+        st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")      
     else:
         parsed_history_records = []
         
@@ -283,7 +254,7 @@ try:
         base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
 
         # -----------------------------------------------------------------
-        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER (Split Season 48 Banner)
+        # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER FOR ACTIVE SEASONS
         # -----------------------------------------------------------------
         total_games_played = max(0, len(cleaned_rows) - 1)
         
@@ -293,14 +264,9 @@ try:
                 "🏆 **Grand Champion:** Dustan Mulkey"
             )
         elif total_games_played > 0:
-            # 🟢 FIRST BANNER: Just the Game Counter
             st.success(f"🃏 **{selected_season.split(' (')[0].upper()} UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.")
-            
-            # 🔵 SECOND BANNER: Dedicated Attendance Note
             st.info("📌 **NOTE:** If you know you will not be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️")
-        else:
-            st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")      
-        
+
         # -----------------------------------------------------------------
         # METRICS SHELF
         # -----------------------------------------------------------------
@@ -359,10 +325,8 @@ if not base_sorted_leaderboard.empty:
         idx = row.index.get_loc("Games Played Format")
         
         if row["Games Played"] <= 7:
-            # 🚨 Under-attended Warning State
             styles[idx] = 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;'
         else:
-            # 🎉 Qualified Milestone State (8+ Games Played)
             styles[idx] = 'background-color: rgba(46, 204, 113, 0.12); font-weight: bold; color: #2ed573;'
             
         return styles
@@ -387,6 +351,66 @@ if not base_sorted_leaderboard.empty:
             "Games Played": None
         }
     )
+else:
+    if "Season XLIX" in selected_season:
+        st.info("📊 Standing grids will populate automatically once Game 1 scores are posted by the Commish!")
+
+# =========================================================================
+# 🎉 NIGHTLY BOUNTIES & WILDCARDS (🔒 TIED STRICTLY TO ACTIVE DATA EXISTENCE)
+# =========================================================================
+if len(cleaned_rows) > 1:
+    high_hand_records = []
+    spin_wheel_records = []
+    
+    for row in cleaned_rows[1:]:
+        game_date = str(row[1]).strip().split()[0] if len(row) >= 3 else str(row[0]).strip().split()[0]
+        
+        if len(row) >= 4 and row[3].strip():
+            raw_text = row[3].strip()
+            for line in raw_text.split('\n'):
+                if not line.strip(): continue
+                if "-" in line:
+                    parts = line.split("-", 1)
+                    input_name = parts[0].strip().title()
+                    prize_text = parts[1].strip()
+                else:
+                    input_name = line.strip().title()
+                    prize_text = "Prize Logged"
+                high_hand_records.append({"Date": game_date, "Player Name": input_name, "Prize Won": prize_text})
+            
+        if len(row) >= 5 and row[4].strip():
+            raw_text = row[4].strip()
+            for line in raw_text.split('\n'):
+                if not line.strip(): continue
+                if "-" in line:
+                    parts = line.split("-", 1)
+                    input_name = parts[0].strip().title()
+                    prize_text = parts[1].strip()
+                else:
+                    input_name = line.strip().title()
+                    prize_text = "Prize Logged"
+                spin_wheel_records.append({"Date": game_date, "Player Name": input_name, "Prize Won": prize_text})
+            
+    if high_hand_records or spin_wheel_records:
+        st.markdown("---")
+        st.subheader("🎉 Nightly Specials & Special Bounties")
+        w_col1, w_col2 = st.columns(2)
+        
+        with w_col1:
+            st.markdown("### 🪵 High Hand Elite Logs")
+            if high_hand_records:
+                df_hh = pd.DataFrame(high_hand_records).sort_values(by="Date", ascending=False)
+                st.dataframe(df_hh, use_container_width=True, hide_index=True)
+            else:
+                st.info("No High Hand records logged yet for this season.")
+                
+        with w_col2:
+            st.markdown("### 🎡 Ace of Spades Wheel Spins")
+            if spin_wheel_records:
+                df_sw = pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False)
+                st.dataframe(df_sw, use_container_width=True, hide_index=True)
+            else:
+                st.info("No Spade Ace wheel draws tracked yet for this season.")
 
 # =========================================================================
 # 🏅 2. POST-SEASON CHAMPIONSHIP SERIES BRACKET
@@ -472,64 +496,8 @@ else:
         * **Requirement:** Season Top 9 + Satellite Winner
         """)
 
-# =========================================================================
-# 🎉 NIGHTLY BOUNTIES & WILDCARDS
-# =========================================================================
-if len(cleaned_rows) > 1:
-    st.markdown("---")
-    st.subheader("🎉 Nightly Specials & Special Bounties")
-    
-    high_hand_records = []
-    spin_wheel_records = []
-    
-    for row in cleaned_rows[1:]:
-        game_date = str(row[1]).strip().split()[0] if len(row) >= 3 else str(row[0]).strip().split()[0]
-        
-        if len(row) >= 4 and row[3].strip():
-            raw_text = row[3].strip()
-            for line in raw_text.split('\n'):
-                if not line.strip(): continue
-                if "-" in line:
-                    parts = line.split("-", 1)
-                    input_name = parts[0].strip().title()
-                    prize_text = parts[1].strip()
-                else:
-                    input_name = line.strip().title()
-                    prize_text = "Prize Logged"
-                high_hand_records.append({"Date": game_date, "Player Name": input_name, "Prize Won": prize_text})
-            
-        if len(row) >= 5 and row[4].strip():
-            raw_text = row[4].strip()
-            for line in raw_text.split('\n'):
-                if not line.strip(): continue
-                if "-" in line:
-                    parts = line.split("-", 1)
-                    input_name = parts[0].strip().title()
-                    prize_text = parts[1].strip()
-                else:
-                    input_name = line.strip().title()
-                    prize_text = "Prize Logged"
-                spin_wheel_records.append({"Date": game_date, "Player Name": input_name, "Prize Won": prize_text})
-            
-    w_col1, w_col2 = st.columns(2)
-    with w_col1:
-        st.markdown("### 🪵 High Hand Elite Logs")
-        if high_hand_records:
-            df_hh = pd.DataFrame(high_hand_records).sort_values(by="Date", ascending=False)
-            st.dataframe(df_hh, use_container_width=True, hide_index=True)
-        else:
-            st.info("No High Hand records logged yet for this season.")
-            
-    with w_col2:
-        st.markdown("### 🎡 Ace of Spades Wheel Spins")
-        if spin_wheel_records:
-            df_sw = pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False)
-            st.dataframe(df_sw, use_container_width=True, hide_index=True)
-        else:
-            st.info("No Spade Ace wheel draws tracked yet for this season.")
-
 # -----------------------------------------------------------------
-# ⚙️ DASHBOARD CONTROLS
+# ⚙️ DASHBOARD CONTROLS (🔒 ONLY SHOW IF HISTORY DATA IS GENERATED)
 # -----------------------------------------------------------------
 if not df_history.empty and last_game_date:
     st.markdown("---")
@@ -564,9 +532,9 @@ if not df_history.empty and last_game_date:
             st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], use_container_width=True, hide_index=True)
 
 # -----------------------------------------------------------------
-# 📉 WEEKLY POSITION TRACKER LINE GRAPH 
+# 📉 WEEKLY POSITION TRACKER LINE GRAPH (🔒 PROTECTED ARCHIVE SPECIFIC)
 # -----------------------------------------------------------------
-if "Season XLVII" in selected_season and not leaderboard.empty:
+if "Season XLVII" in selected_season and not leaderboard.empty and not df_history.empty:
     st.markdown("---")
     if last_game_date:
         st.subheader(f"📉 Weekly Finishing Position History (Last Game: {last_game_date})")
@@ -680,14 +648,11 @@ with st.expander("⚙️ Secure League Admin Portal"):
                 try:
                     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
                     
-                    # 🔑 RENDER ENVIRONMENT CHECKER FIRST
                     if "gcp_service_account" in os.environ:
                         creds_dict = json.loads(os.environ["gcp_service_account"])
                         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-                    # 👑 STREAMLIT CLOUD FALLBACK BACKUP
                     elif "gcp_service_account" in st.secrets:
                         creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
-                    # 🪵 LOCAL PC DEVELOPMENT FILES
                     else:
                         creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
                     
@@ -752,7 +717,7 @@ if season_toggle != st.session_state["active_season_choice"]:
     st.rerun()
 
 # -----------------------------------------------------------------
-# 🛡️ LEAGUE INFO FOOTER 
+# 🛡️ League Info Footer 
 # -----------------------------------------------------------------
 st.markdown("---")
 st.info(
