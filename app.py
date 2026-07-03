@@ -532,62 +532,62 @@ if not df_history.empty and last_game_date:
             st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], use_container_width=True, hide_index=True)
 
 # -----------------------------------------------------------------
-# 📉 WEEKLY POSITION TRACKER LINE GRAPH (🔒 PROTECTED ARCHIVE SPECIFIC)
+# 📉 WEEKLY POSITION TRACKER LINE GRAPH (🔒 STRICTOR ARCHIVE ISOLATION)
 # -----------------------------------------------------------------
-if "Season XLVII" in selected_season and not leaderboard.empty and not df_history.empty:
-    st.markdown("---")
-    if last_game_date:
-        st.subheader(f"📉 Weekly Finishing Position History (Last Game: {last_game_date})")
-    else:
-        st.subheader("📉 Weekly Finishing Position History")
+if "Season XLVII" in selected_season:
+    if not leaderboard.empty and not df_history.empty:
+        st.markdown("---")
+        if last_game_date:
+            st.subheader(f"📉 Weekly Finishing Position History (Last Game: {last_game_date})")
+        else:
+            st.subheader("📉 Weekly Finishing Position History")
+            
+        df_sorted_dates = df_history.sort_values(by="Date")
+        if search_player_placeholder != "-- View All --":
+            st.markdown(f"*Tracking finishing trends over time for **{search_player_placeholder}**.*")
+            df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"] == search_player_placeholder]
+        else:
+            st.markdown("*Displaying season trajectory lines of the current **Top 5 Leaders**.*")
+            df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"].isin(list(base_sorted_leaderboard.head(5)["Player Name"]))]
+            
+        if not df_filtered_tracked.empty:
+            pivot_df = df_filtered_tracked.pivot_table(index="Date", columns="Player Name", values="Position", aggfunc="first")
+            line_data = pivot_df.reset_index().melt("Date", var_name="Player Name", value_name="Position").dropna()
+            line_data["Position"] = line_data["Position"].astype(int)
+            
+            position_line_chart = alt.Chart(line_data).mark_line(point=True, strokeWidth=3).encode(
+                x=alt.X("Date:N", title="Game Date"),
+                y=alt.Y("Position:Q", title="Finishing Place", sort="descending", scale=alt.Scale(domain=[1, int(df_history["Position"].max())]), axis=alt.Axis(tickMinStep=1)),
+                color=alt.Color("Player Name:N", title="Players"),
+                tooltip=["Date", "Player Name", "Position"]
+            ).properties(height=320).interactive()
+            
+            with st.container():
+                st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
+                st.altair_chart(position_line_chart, use_container_width=True)
+                st.markdown('</div>', unsafe_allow_html=True)
+
+        # -----------------------------------------------------------------
+        # 🔮 LEAGUE ARCHETYPES BUBBLE CHART
+        # -----------------------------------------------------------------
+        st.markdown("---")
+        st.subheader("🔮 League Activity vs Efficiency Matrix")
         
-    df_sorted_dates = df_history.sort_values(by="Date")
-    if search_player_placeholder != "-- View All --":
-        st.markdown(f"*Tracking finishing trends over time for **{search_player_placeholder}**.*")
-        df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"] == search_player_placeholder]
-    else:
-        st.markdown("*Displaying season trajectory lines of the current **Top 5 Leaders**.*")
-        df_filtered_tracked = df_sorted_dates[df_sorted_dates["Player Name"].isin(list(base_sorted_leaderboard.head(5)["Player Name"]))]
-        
-    if not df_filtered_tracked.empty:
-        pivot_df = df_filtered_tracked.pivot_table(index="Date", columns="Player Name", values="Position", aggfunc="first")
-        line_data = pivot_df.reset_index().melt("Date", var_name="Player Name", value_name="Position").dropna()
-        line_data["Position"] = line_data["Position"].astype(int)
-        
-        position_line_chart = alt.Chart(line_data).mark_line(point=True, strokeWidth=3).encode(
-            x=alt.X("Date:N", title="Game Date"),
-            y=alt.Y("Position:Q", title="Finishing Place", sort="descending", scale=alt.Scale(domain=[1, int(df_history["Position"].max())]), axis=alt.Axis(tickMinStep=1)),
-            color=alt.Color("Player Name:N", title="Players"),
-            tooltip=["Date", "Player Name", "Position"]
-        ).properties(height=320).interactive()
+        min_games, max_games_track = int(leaderboard["Games Played"].min()), int(leaderboard["Games Played"].max())
+        min_pts, max_pts_track = int(leaderboard["Total Points"].min()), int(leaderboard["Total Points"].max())
+
+        bubble_chart = alt.Chart(leaderboard).mark_circle().encode(
+            x=alt.X("Games Played:Q", title="Total Attendance (Games)", scale=alt.Scale(domain=[max(0, min_games - 1), max_games_track + 1]), axis=alt.Axis(tickMinStep=1)),
+            y=alt.Y("Total Points:Q", title="Total Points Accumulated", scale=alt.Scale(domain=[max(0, min_pts - 500), max_pts_track + 1000])),
+            size=alt.Size("Avg Points/Game:Q", title="Efficiency", scale=alt.Scale(range=[100, 1000])),
+            color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
+            tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
+        ).properties(height=340).interactive()
         
         with st.container():
             st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
-            st.altair_chart(position_line_chart, use_container_width=True)
+            st.altair_chart(bubble_chart, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
-
-    # -----------------------------------------------------------------
-    # 🔮 LEAGUE ARCHETYPES BUBBLE CHART
-    # -----------------------------------------------------------------
-    st.markdown("---")
-    st.subheader("🔮 League Activity vs Efficiency Matrix")
-    
-    min_games, max_games_track = int(leaderboard["Games Played"].min()), int(leaderboard["Games Played"].max())
-    min_pts, max_pts_track = int(leaderboard["Total Points"].min()), int(leaderboard["Total Points"].max())
-
-    bubble_chart = alt.Chart(leaderboard).mark_circle().encode(
-        x=alt.X("Games Played:Q", title="Total Attendance (Games)", scale=alt.Scale(domain=[max(0, min_games - 1), max_games_track + 1]), axis=alt.Axis(tickMinStep=1)),
-        y=alt.Y("Total Points:Q", title="Total Points Accumulated", scale=alt.Scale(domain=[max(0, min_pts - 500), max_pts_track + 1000])),
-        size=alt.Size("Avg Points/Game:Q", title="Efficiency", scale=alt.Scale(range=[100, 1000])),
-        color=alt.Color("Total Points:Q", scale=alt.Scale(range=["#2ed573", "#ffa502"]), legend=None),
-        tooltip=["Player Name", "Games Played", "Total Points", "Avg Points/Game"]
-    ).properties(height=340).interactive()
-    
-    with st.container():
-        st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
-        st.altair_chart(bubble_chart, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
 # =========================================================================
 # 🔐 SECURE ADMIN DIRECT INPUT PANEL (BYPASSES GOOGLE FORMS)
 # =========================================================================
