@@ -1,3 +1,6 @@
+[client]
+toolbarMode = "hidden"
+
 [theme]
 primaryColor = "#2ed573"
 backgroundColor = "#111217"
