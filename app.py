@@ -9,19 +9,26 @@ import altair as alt
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
 # =========================================================================
-# 🔄 GLOBAL SESSION STATE INITS
+# 🔄 GLOBAL SESSION STATE & VARIABLE RESETS
 # =========================================================================
 if "temporary_walk_ins" not in st.session_state:
     st.session_state["temporary_walk_ins"] = []
 
-# =========================================================================
-# 🔄 DEFAULT SEASON INITIALIZATION (TOP OF PAGE)
-# =========================================================================
 if "active_season_choice" not in st.session_state:
     st.session_state["active_season_choice"] = "Season XLVIII (Current)"
 
 selected_season = st.session_state["active_season_choice"]
 
+# 🔒 FORCE RESET ALL STORAGE STATE PER RERUN TO PREVENT ARCHIVE BLEEDING
+base_sorted_leaderboard = pd.DataFrame()
+leaderboard = pd.DataFrame()
+df_history = pd.DataFrame()
+last_game_date = None
+cleaned_rows = []
+
+# =========================================================================
+# 🗓️ CHOOSE TARGET WORKSHEET
+# =========================================================================
 if "Season XLIX" in selected_season:
     TARGET_WORKSHEET = "Form Responses S49"
     st.title("🏆 Dirty Town Poker League - Season XLIX")
@@ -38,7 +45,6 @@ else:
 st.markdown(
     """
     <style>
-    /* 🎡 Shrink text sizes inside dataframes */
     div[data-testid="stDataFrameCollapsedCell"] div,
     div[data-testid="stDataFrame"] table,
     .stDataFrame div[data-testid="styled-data-frame"] div {
@@ -97,15 +103,11 @@ st.markdown(
 def load_player_registry():
     try:
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        
-        # 🔑 RENDER ENVIRONMENT CHECKER FIRST
         if "gcp_service_account" in os.environ:
             creds_dict = json.loads(os.environ["gcp_service_account"])
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        # 👑 STREAMLIT CLOUD FALLBACK BACKUP
         elif "gcp_service_account" in st.secrets:
             creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
-        # 🪵 LOCAL PC DEVELOPMENT FILES
         else:
             creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
         
@@ -146,14 +148,11 @@ def get_raw_form_responses(worksheet_name):
     global global_workbook_instance
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     try:
-        # 🔑 RENDER ENVIRONMENT CHECKER FIRST
         if "gcp_service_account" in os.environ:
             creds_dict = json.loads(os.environ["gcp_service_account"])
             creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        # 👑 STREAMLIT CLOUD FALLBACK BACKUP
         elif "gcp_service_account" in st.secrets:
             creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
-        # 🪵 LOCAL PC DEVELOPMENT FILES
         else:
             creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
     except Exception:
@@ -165,12 +164,6 @@ def get_raw_form_responses(worksheet_name):
     sheet = workbook.worksheet(worksheet_name)
     return sheet.get_all_values()
 
-base_sorted_leaderboard = pd.DataFrame()
-leaderboard = pd.DataFrame()
-df_history = pd.DataFrame()
-last_game_date = None
-cleaned_rows = []
-
 # =========================================================================
 # 💾 DATA COMPILATION & PARSING ENGINE (REGULAR SEASON ONLY)
 # =========================================================================
@@ -179,10 +172,6 @@ try:
     cleaned_rows = [r for r in raw_rows if any(cell.strip() for cell in r)]
     
     if len(cleaned_rows) <= 1:
-        leaderboard = pd.DataFrame(columns=["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"])
-        df_history = pd.DataFrame(columns=["Date", "Player Name", "Position", "Points"])
-        base_sorted_leaderboard = leaderboard
-        
         # 🤖 AUTOMATED SEASON ANNOUNCEMENT BANNER FOR EMPTY SEASONS (E.G. S49 PRE-START)
         st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")      
     else:
@@ -588,6 +577,7 @@ if "Season XLVII" in selected_season:
             st.markdown('<div style="background-color: rgba(255,255,255,0.04); padding: 15px; border-radius: 8px;">', unsafe_allow_html=True)
             st.altair_chart(bubble_chart, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
+
 # =========================================================================
 # 🔐 SECURE ADMIN DIRECT INPUT PANEL (BYPASSES GOOGLE FORMS)
 # =========================================================================
