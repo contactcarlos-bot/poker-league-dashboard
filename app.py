@@ -24,7 +24,7 @@ selected_season = st.session_state["active_season_choice"]
 # =========================================================================
 if "Season XLVIII (Current)" == selected_season:
     TARGET_WORKSHEET = "Form Responses S48"
-    season_total_weeks = 18
+    season_total_weeks = 17
     st.title("🏆 Dirty Town Poker League - Season XLVIII")
 else:
     TARGET_WORKSHEET = "Form Responses 1"
