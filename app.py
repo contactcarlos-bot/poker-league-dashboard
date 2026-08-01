@@ -116,6 +116,7 @@ PLAYER_REGISTRY = load_player_registry()
 def calculate_poker_points(total_players, rank):
     buy_ins = int(total_players)
     rank = int(rank)
+    
     LEAGUE_MATRIX = {
         6:  [371, 226, 156, 121, 110, 100], 7:  [460, 282, 195, 143, 119, 110, 100], 
         8:  [558, 343, 240, 174, 135, 118, 110, 100], 9:  [664, 410, 290, 213, 160, 132, 118, 110, 100],
@@ -132,7 +133,16 @@ def calculate_poker_points(total_players, rank):
         28: [2934, 2303, 1853, 1525, 1279, 1098, 953, 829, 724, 634, 556, 485, 420, 363, 314, 273, 241, 216, 194, 178, 168, 158, 141, 132, 123, 113, 100], 29: [3035, 2402, 1944, 1608, 1352, 1164, 1014, 886, 775, 681, 600, 527, 459, 399, 346, 300, 263, 235, 211, 191, 178, 168, 157, 149, 141, 132, 124, 113, 100],
         30: [3137, 2500, 2035, 1692, 1427, 1231, 1076, 943, 828, 730, 645, 570, 500, 437, 380, 331, 289, 256, 230, 207, 189, 178, 167, 157, 149, 141, 133, 124, 113, 100]
     }
-    return LEAGUE_MATRIX.get(buy_ins, [100])[rank - 1] if rank <= buy_ins else 100
+    
+    # Safely fetch the points array for the current field size (empty list if not found)
+    points_array = LEAGUE_MATRIX.get(buy_ins, [])
+    
+    # If the rank exists within the array, return the specific points
+    if 1 <= rank <= len(points_array):
+        return points_array[rank - 1]
+        
+    # Fallback for small test games (<6 players), huge games (>30), or out-of-bounds ranks
+    return 100
 
 @st.cache_data(ttl=600)
 def get_raw_form_responses(worksheet_name):
