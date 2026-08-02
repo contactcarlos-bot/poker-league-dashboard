@@ -203,10 +203,20 @@ if len(cleaned_rows) <= 1:
     """)
 
     # 🔐 INPUT ADMIN DRAWER AT FOR PRE-SEASON DEPLOYMENTS
+    # 🔐 INPUT ADMIN DRAWER AT FOR PRE-SEASON DEPLOYMENTS
     st.markdown("---")
     with st.expander("⚙️ Secure League Admin Portal"):
+        # 1. Start memory state for admin login
+        if "is_admin" not in st.session_state:
+            st.session_state["is_admin"] = False
+            
         admin_password = st.text_input("Enter Admin Password:", type="password", key="pre_season_admin_frame")
-        if admin_password == "your_secret_password": 
+        
+        # 2. Check secure secrets and lock drawer open
+        if admin_password == st.secrets["admin_password"]: 
+            st.session_state["is_admin"] = True
+            
+        if st.session_state["is_admin"]:
             st.success("Access Verified.")
             st.markdown("#### 📋 Input Tonight's Game Ledger")
             game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now(), key="empty_season_date")
@@ -234,12 +244,14 @@ if len(cleaned_rows) <= 1:
                         sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                         
                         formatted_standings = "\n".join(placements_data)
-                        next_open_row = len(sheet.get_all_values()) + 1
                         row_values = [str(game_date_input), str(game_date_input), formatted_standings, high_hand_input.strip(), wheel_spin_input.strip()]
                         
-                        sheet.insert_row(row_values, index=next_open_row, value_input_option="USER_ENTERED")
+                        # 3. Bug Fix: Safely append to the absolute bottom of the sheet
+                        sheet.append_row(row_values, value_input_option="USER_ENTERED")
+                        
                         st.balloons()
                         st.cache_data.clear()
+                        st.session_state["is_admin"] = False # Reset drawer for next time
                         st.rerun()
                     except Exception as append_err:
                         st.error(f"Failed to post data: {append_err}")
@@ -533,8 +545,17 @@ if not df_history.empty and not leaderboard.empty:
 # =========================================================================
 st.markdown("---")
 with st.expander("⚙️ Secure League Admin Portal"):
+    # 1. Start memory state for admin login
+    if "is_admin" not in st.session_state:
+        st.session_state["is_admin"] = False
+        
     admin_password = st.text_input("Enter Admin Password:", type="password", key="active_panel_pass_frame")
-    if admin_password == "your_secret_password": 
+    
+    # 2. Check secure secrets and lock drawer open
+    if admin_password == st.secrets["admin_password"]: 
+        st.session_state["is_admin"] = True
+        
+    if st.session_state["is_admin"]:
         st.success("Access Verified.")
         st.markdown("#### 🏃‍♂️ Quick-Add New Surprise Player")
         new_guest_name = st.text_input("Type Full Name of New Player:", key="active_panel_guest_box")
@@ -575,18 +596,20 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                     
                     formatted_standings = "\n".join(placements_data)
-                    next_open_row = len(sheet.get_all_values()) + 1
                     row_values = [str(game_date_input), str(game_date_input), formatted_standings, high_hand_input.strip(), wheel_spin_input.strip()]
                     
-                    sheet.insert_row(row_values, index=next_open_row, value_input_option="USER_ENTERED")
+                    # 3. Bug Fix: Safely append to the absolute bottom of the sheet
+                    sheet.append_row(row_values, value_input_option="USER_ENTERED")
+                    
                     st.balloons()
                     st.cache_data.clear()
                     st.session_state["temporary_walk_ins"] = []
+                    st.session_state["is_admin"] = False # Reset drawer for next time
                     st.rerun()
                 except Exception as append_err: st.error(f"Failed to post data: {append_err}")
             else:
                 st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
-
+                
 # =========================================================================
 # 🔄 LEAGUE HISTORY ARCHIVE NAVIGATION
 # =========================================================================
