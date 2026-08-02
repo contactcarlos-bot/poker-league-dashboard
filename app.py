@@ -413,6 +413,7 @@ st.dataframe(
     }
 )
 
+
 # =========================================================================
 # 🎉 NIGHTLY BOUNTIES & WILDCARDS
 # =========================================================================
@@ -433,17 +434,19 @@ if len(cleaned_rows) > 1:
                     parts = line.split("-", 1) if "-" in line else [line, "Prize Logged"]
                     spin_wheel_records.append({"Date": g_date, "Player Name": parts[0].strip().title(), "Prize Won": parts[1].strip()})
                     
+    # 🗃️ THE EXPANDER UPGRADE
     if high_hand_records or spin_wheel_records:
         st.markdown("---")
-        st.subheader("🎉 Nightly Specials & Special Bounties")
-        w_col1, w_col2 = st.columns(2)
-        with w_col1:
-            st.markdown("### 🪵 High Hand Elite Logs")
-            if high_hand_records: st.dataframe(pd.DataFrame(high_hand_records).sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
-        with w_col2:
-            st.markdown("### 🎡 Ace of Spades Wheel Spins")
-            if spin_wheel_records: st.dataframe(pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
-
+        with st.expander("🎉 View Nightly Specials & Special Bounties History"):
+            w_col1, w_col2 = st.columns(2)
+            with w_col1:
+                st.markdown("### 🪵 High Hand Elite Logs")
+                if high_hand_records: 
+                    st.dataframe(pd.DataFrame(high_hand_records).sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
+            with w_col2:
+                st.markdown("### 🎡 Ace of Spades Wheel Spins")
+                if spin_wheel_records: 
+                    st.dataframe(pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
 # =========================================================================
 # 🏅 POST-SEASON BRACKETS SYSTEM (ALL NAMES INCLUDED)
 # =========================================================================
