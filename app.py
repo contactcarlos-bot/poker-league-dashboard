@@ -7,7 +7,15 @@ from oauth2client.service_account import ServiceAccountCredentials
 import altair as alt
 
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
-
+# =========================================================================
+# 👑 SIDEBAR: LEAGUE ADMIN & INFO
+# =========================================================================
+with st.sidebar:
+    st.markdown("### 🏛️ League Office")
+    st.success("**Commissioner:**\nMichael Craft 👑")
+    st.info("**Co-Commissioner:**\nTodd Kinsell 💼")
+    st.markdown("---")
+    st.markdown("If you know you will **not** be able to attend this week's game, please notify Todd as early as possible so the field size can be adjusted!")
 # =========================================================================
 # 🔄 GLOBAL SESSION STATE & VARIABLE RESETS
 # =========================================================================
@@ -348,21 +356,41 @@ elif selected_season == "Season XLVIII (Current)":
 # 📊 METRICS & SEASON GRIDS
 # =========================================================================
 if not base_sorted_leaderboard.empty:
-    st.markdown("### 👑 Season Milestones & Management")
+    st.markdown("### 👑 Season Milestones")
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    
     current_leader = base_sorted_leaderboard.iloc[0]["Player Name"]
+    
     win_sorted = leaderboard.sort_values(by="🥇 1st", ascending=False)
     win_boss = win_sorted.iloc[0]["Player Name"] if not win_sorted.empty else "N/A"
     win_count = win_sorted.iloc[0]["🥇 1st"] if not win_sorted.empty else 0
     
+    # Calculate the player with the most Final Tables
+    ft_sorted = leaderboard.sort_values(by="Final Tables", ascending=False)
+    ft_boss = ft_sorted.iloc[0]["Player Name"] if not ft_sorted.empty else "N/A"
+    ft_count = ft_sorted.iloc[0]["Final Tables"] if not ft_sorted.empty else 0
+    
     with m_col1:
         st.metric("League Leader 🥇", current_leader, f"{base_sorted_leaderboard.iloc[0]['Total Points']} pts")
+        
     with m_col2:
         st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
+        
     with m_col3:
-        st.metric("Commissioner 📋", "Michael Craft", "League Admin")
-    with m_col4:
-        st.metric("Co-Commissioner 💼", "Todd Kinsell", "League Admin")
+        st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
+
+    # 🥶 THE FIRST-OUT METRIC 
+    if last_game_date:
+        last_game_df = df_history[df_history["Date"] == last_game_date]
+        first_out_player = last_game_df.iloc[-1]["Player Name"]
+        first_out_position = last_game_df.iloc[-1]["Position"]
+        
+        with m_col4:
+            st.metric("First Out 🥶", first_out_player, f"Busted {first_out_position}th")
+    else:
+        with m_col4:
+            st.metric("First Out 🥶", "N/A", "Waiting for Game 1")
+
 
 # =========================================================================
 # 🏆 1. RESTORED ORIGINAL OVERALL SEASON RANKINGS LEADERBOARD
