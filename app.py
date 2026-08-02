@@ -213,7 +213,7 @@ if len(cleaned_rows) <= 1:
         admin_password = st.text_input("Enter Admin Password:", type="password", key="pre_season_admin_frame")
         
         # 2. Check secure secrets and lock drawer open
-        if admin_password == st.secrets["admin_password"]: 
+        if admin_password != "" and admin_password == os.environ.get("admin_password"):
             st.session_state["is_admin"] = True
             
         if st.session_state["is_admin"]:
@@ -552,7 +552,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
     admin_password = st.text_input("Enter Admin Password:", type="password", key="active_panel_pass_frame")
     
     # 2. Check secure secrets and lock drawer open
-    if admin_password == st.secrets["admin_password"]: 
+    if admin_password != "" and admin_password == os.environ.get("admin_password"):    
         st.session_state["is_admin"] = True
         
     if st.session_state["is_admin"]:
