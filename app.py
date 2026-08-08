@@ -7,15 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import altair as alt
 
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
-# =========================================================================
-# 👑 SIDEBAR: LEAGUE ADMIN & INFO
-# =========================================================================
-with st.sidebar:
-    st.markdown("### 🏛️ League Office")
-    st.success("**Commissioner:**\nMichael Craft 👑")
-    st.info("**Co-Commissioner:**\nTodd Kinsell 💼")
-    st.markdown("---")
-    st.markdown("If you know you will **not** be able to attend this week's game, please notify Todd as early as possible!")
+
 # =========================================================================
 # 🔄 GLOBAL SESSION STATE & VARIABLE RESETS
 # =========================================================================
@@ -24,8 +16,21 @@ if "temporary_walk_ins" not in st.session_state:
 
 if "active_season_choice" not in st.session_state:
     st.session_state["active_season_choice"] = "Season XLVIII (Current)"
+    
+if "is_admin" not in st.session_state:
+    st.session_state["is_admin"] = False
 
 selected_season = st.session_state["active_season_choice"]
+
+# =========================================================================
+# 👑 SIDEBAR: LEAGUE ADMIN & INFO
+# =========================================================================
+with st.sidebar:
+    st.markdown("### 🏛️ League Office")
+    st.success("**Commissioner:**\nMichael Craft 👑")
+    st.info("**Co-Commissioner:**\nTodd Kinsell 💼")
+    st.markdown("---")
+    st.markdown("If you know you will **not** be able to attend this week's game, please notify Todd as early as possible so the field size can be adjusted!")
 
 # =========================================================================
 # 🗓️ EXPLICIT SEASON ROUTING (PREVENTS LOGICAL OVERLAP)
@@ -141,7 +146,7 @@ def calculate_poker_points(total_players, rank):
         28: [2934, 2303, 1853, 1525, 1279, 1098, 953, 829, 724, 634, 556, 485, 420, 363, 314, 273, 241, 216, 194, 178, 168, 158, 148, 141, 132, 123, 113, 100], 
         29: [3035, 2402, 1944, 1608, 1352, 1164, 1014, 886, 775, 681, 600, 527, 459, 399, 346, 300, 263, 235, 211, 191, 178, 168, 157, 149, 141, 132, 124, 113, 100],
         30: [3137, 2500, 2035, 1692, 1427, 1231, 1076, 943, 828, 730, 645, 570, 500, 437, 380, 331, 289, 256, 230, 207, 189, 178, 167, 157, 149, 141, 133, 124, 113, 100]
-        }
+    }
     # Safely fetch the points array for the current field size (empty list if not found)
     points_array = LEAGUE_MATRIX.get(buy_ins, [])
     
@@ -211,24 +216,17 @@ if len(cleaned_rows) <= 1:
     """)
 
     # 🔐 INPUT ADMIN DRAWER AT FOR PRE-SEASON DEPLOYMENTS
-    # 🔐 INPUT ADMIN DRAWER AT FOR PRE-SEASON DEPLOYMENTS
     st.markdown("---")
     with st.expander("⚙️ Secure League Admin Portal"):
-        # 1. Start memory state for admin login
-        if "is_admin" not in st.session_state:
-            st.session_state["is_admin"] = False
-            
         admin_password = st.text_input("Enter Admin Password:", type="password", key="pre_season_admin_frame")
-        
-        # 2. Check secure secrets and lock drawer open
-        if admin_password != "" and admin_password == os.environ.get("admin_password"):
+        if admin_password != "" and admin_password == os.environ.get("admin_password"): 
             st.session_state["is_admin"] = True
             
         if st.session_state["is_admin"]:
             st.success("Access Verified.")
             st.markdown("#### 📋 Input Tonight's Game Ledger")
             game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now(), key="empty_season_date")
-            field_size = st.number_input("Total Players:", min_value=2, max_value=30, value=30, key="empty_season_size")
+            field_size = st.number_input("Total Players:", min_value=2, max_value=30, value=18, key="empty_season_size")
             available_players = sorted(PLAYER_REGISTRY)
             
             placements_data = []
@@ -241,7 +239,6 @@ if len(cleaned_rows) <= 1:
             
             high_hand_input = st.text_area("High Hand Elite Logs:", placeholder="Name - Details", key="empty_hh")
             wheel_spin_input = st.text_area("Ace of Spades Wheel Spins:", placeholder="Name - Prize", key="empty_ws")
-
             
             if st.button("🚀 Post Official Game Results to Google Sheets", key="empty_season_post_btn"):
                 if len(placements_data) == field_size:
@@ -253,51 +250,34 @@ if len(cleaned_rows) <= 1:
                         sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                         
                         formatted_standings = "\n".join(placements_data)
-                        row_values = [str(game_date_input), str(game_date_input), formatted_standings, high_hand_input.strip(), wheel_spin_input.strip()]
                         
-                        # 3. Bug Fix: Safely append to the absolute bottom of the sheet
-                    sheet = active_workbook.worksheet(TARGET_WORKSHEET)
-                    
-                    formatted_standings = "\n".join(placements_data)
-                    
-                    # 1. BULLETPROOF ROW FINDER: Scans the actual text, ignoring background colors
-                    all_rows = sheet.get_all_values()
-                    
-                    # Find the absolute last row that contains any actual text
-                    last_data_row = 1
-                    for row_index, row_data in enumerate(all_rows):
-                        if any(str(cell).strip() for cell in row_data):
-                            last_data_row = row_index + 1
-                            
-                    true_next_row = last_data_row + 1
-                    
-                    # 2. Ensure the sheet is physically tall enough (adds a row if you hit the bottom)
-                    if true_next_row > sheet.row_count:
-                        sheet.add_rows(1)
-                    
-                    # 3. Grab the exact 5 cells in the true next empty row
-                    cell_list = sheet.range(f"A{true_next_row}:E{true_next_row}")
-                    
-                    # 4. Inject the text directly into the cells
-                    cell_list[0].value = str(game_date_input)
-                    cell_list[1].value = str(game_date_input)
-                    cell_list[2].value = formatted_standings
-                    cell_list[3].value = high_hand_input.strip()
-                    cell_list[4].value = wheel_spin_input.strip()
-                    
-                    # 5. Save the exact cells to the sheet (bypasses formatting confusion)
-                    sheet.update_cells(cell_list, value_input_option="USER_ENTERED")
-                    
-                    st.balloons()
-                    st.cache_data.clear()
-                    st.session_state["temporary_walk_ins"] = []
-                    st.session_state["is_admin"] = False
-                    st.rerun()
-                          # THIS IS THE PART THAT WAS MISSING!
-                    except Exception as append_err: 
+                        # 1. BULLETPROOF ROW FINDER
+                        all_rows = sheet.get_all_values()
+                        last_data_row = 1
+                        for row_index, row_data in enumerate(all_rows):
+                            if any(str(cell).strip() for cell in row_data):
+                                last_data_row = row_index + 1
+                                
+                        true_next_row = last_data_row + 1
+                        
+                        if true_next_row > sheet.row_count:
+                            sheet.add_rows(1)
+                        
+                        cell_list = sheet.range(f"A{true_next_row}:E{true_next_row}")
+                        cell_list[0].value = str(game_date_input)
+                        cell_list[1].value = str(game_date_input)
+                        cell_list[2].value = formatted_standings
+                        cell_list[3].value = high_hand_input.strip()
+                        cell_list[4].value = wheel_spin_input.strip()
+                        
+                        sheet.update_cells(cell_list, value_input_option="USER_ENTERED")
+                        
+                        st.balloons()
+                        st.cache_data.clear()
+                        st.session_state["is_admin"] = False
+                        st.rerun()
+                    except Exception as append_err:
                         st.error(f"Failed to post data: {append_err}")
-                else:
-                    st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
 
     # 🔄 HISTORICAL ARCHIVE NAVIGATOR FOR EMPTY SEASONS
     st.markdown("---")
@@ -313,8 +293,6 @@ if len(cleaned_rows) <= 1:
         st.session_state["active_season_choice"] = season_toggle
         st.rerun()
 
-    st.markdown("---")
-    st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Stephen Craft** 👑. If you know you will **not** be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️")
     st.stop()
 
 # =========================================================================
@@ -385,7 +363,6 @@ if selected_season == "Season XLVII (Archived)":
     st.success("🃏 **SEASON XLVII COMPLETED:** 17 regular season games are in the archives.\n\n🏆 **Grand Champion:** Dustan Mulkey")
 elif selected_season == "Season XLVIII (Current)":
     st.success(f"🃏 **SEASON XLVIII UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.")
-    st.info("📌 **NOTE:** If you know you will not be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! 🏃‍♂️")
 
 # =========================================================================
 # 📊 METRICS & SEASON GRIDS
@@ -400,7 +377,6 @@ if not base_sorted_leaderboard.empty:
     win_boss = win_sorted.iloc[0]["Player Name"] if not win_sorted.empty else "N/A"
     win_count = win_sorted.iloc[0]["🥇 1st"] if not win_sorted.empty else 0
     
-    # Calculate the player with the most Final Tables
     ft_sorted = leaderboard.sort_values(by="Final Tables", ascending=False)
     ft_boss = ft_sorted.iloc[0]["Player Name"] if not ft_sorted.empty else "N/A"
     ft_count = ft_sorted.iloc[0]["Final Tables"] if not ft_sorted.empty else 0
@@ -414,7 +390,6 @@ if not base_sorted_leaderboard.empty:
     with m_col3:
         st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
 
-    # 🥶 THE FIRST-OUT METRIC 
     if last_game_date:
         last_game_df = df_history[df_history["Date"] == last_game_date]
         first_out_player = last_game_df.iloc[-1]["Player Name"]
@@ -425,7 +400,6 @@ if not base_sorted_leaderboard.empty:
     else:
         with m_col4:
             st.metric("First Out 🥶", "N/A", "Waiting for Game 1")
-
 
 # =========================================================================
 # 🏆 1. RESTORED ORIGINAL OVERALL SEASON RANKINGS LEADERBOARD
@@ -476,7 +450,6 @@ st.dataframe(
     }
 )
 
-
 # =========================================================================
 # 🎉 NIGHTLY BOUNTIES & WILDCARDS
 # =========================================================================
@@ -497,7 +470,6 @@ if len(cleaned_rows) > 1:
                     parts = line.split("-", 1) if "-" in line else [line, "Prize Logged"]
                     spin_wheel_records.append({"Date": g_date, "Player Name": parts[0].strip().title(), "Prize Won": parts[1].strip()})
                     
-    # 🗃️ THE EXPANDER UPGRADE
     if high_hand_records or spin_wheel_records:
         st.markdown("---")
         with st.expander("🎉 View Nightly Specials & Special Bounties History"):
@@ -510,6 +482,7 @@ if len(cleaned_rows) > 1:
                 st.markdown("### 🎡 Ace of Spades Wheel Spins")
                 if spin_wheel_records: 
                     st.dataframe(pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
+
 # =========================================================================
 # 🏅 POST-SEASON BRACKETS SYSTEM (ALL NAMES INCLUDED)
 # =========================================================================
@@ -578,7 +551,7 @@ if not df_history.empty and last_game_date:
     st.markdown("---")
     st.markdown("### ⚙️ Dashboard Controls")
     search_player = st.selectbox("🔎 Player Report Search:", ["-- View All --"] + sorted(df_history["Player Name"].unique()), key="active_season_controls_search")
-
+        
     if search_player != "-- View All --":
         player_df = df_history[df_history["Player Name"] == search_player].copy()
         col1, col2, col3 = st.columns(3)
@@ -611,14 +584,9 @@ if not df_history.empty and not leaderboard.empty:
 # =========================================================================
 st.markdown("---")
 with st.expander("⚙️ Secure League Admin Portal"):
-    # 1. Start memory state for admin login
-    if "is_admin" not in st.session_state:
-        st.session_state["is_admin"] = False
-        
     admin_password = st.text_input("Enter Admin Password:", type="password", key="active_panel_pass_frame")
     
-    # 2. Check secure secrets and lock drawer open
-    if admin_password != "" and admin_password == os.environ.get("admin_password"):    
+    if admin_password != "" and admin_password == os.environ.get("admin_password"): 
         st.session_state["is_admin"] = True
         
     if st.session_state["is_admin"]:
@@ -635,7 +603,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
         st.markdown("---")
         st.markdown("#### 📋 Input Tonight's Game Ledger")
         game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now(), key="active_panel_date")
-        field_size = st.number_input("Total Players:", min_value=2, max_value=30, value=30, key="active_panel_size")
+        field_size = st.number_input("Total Players:", min_value=2, max_value=30, value=18, key="active_panel_size")
         available_players = sorted(PLAYER_REGISTRY + st.session_state["temporary_walk_ins"])
         
         placements_data = []
@@ -657,7 +625,8 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     active_workbook = client.open("Dirty Town Poker League Input (Responses)")
                     reg_sheet = active_workbook.worksheet("Registry")
                     for name in placements_data:
-                        if name not in PLAYER_REGISTRY: reg_sheet.append_row([name])
+                        if name not in PLAYER_REGISTRY: 
+                            reg_sheet.append_row([name])
                             
                     sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                     
@@ -674,7 +643,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
                             
                     true_next_row = last_data_row + 1
                     
-                    # 2. Ensure the sheet is physically tall enough (adds a row if you hit the bottom)
+                    # 2. Ensure the sheet is physically tall enough
                     if true_next_row > sheet.row_count:
                         sheet.add_rows(1)
                     
@@ -688,7 +657,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     cell_list[3].value = high_hand_input.strip()
                     cell_list[4].value = wheel_spin_input.strip()
                     
-                    # 5. Save the exact cells to the sheet (bypasses formatting confusion)
+                    # 5. Save the exact cells to the sheet
                     sheet.update_cells(cell_list, value_input_option="USER_ENTERED")
                     
                     st.balloons()
@@ -696,10 +665,11 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     st.session_state["temporary_walk_ins"] = []
                     st.session_state["is_admin"] = False
                     st.rerun()
-                except Exception as append_err: st.error(f"Failed to post data: {append_err}")
+                except Exception as append_err: 
+                    st.error(f"Failed to post data: {append_err}")
             else:
                 st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
-                
+
 # =========================================================================
 # 🔄 LEAGUE HISTORY ARCHIVE NAVIGATION
 # =========================================================================
@@ -716,9 +686,9 @@ season_toggle = st.selectbox(
 if season_toggle != selected_season:
     st.session_state["active_season_choice"] = season_toggle
     st.rerun()
-
+    
 st.markdown("---")
-st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Stephen Craft** 👑. If you know you will **not** be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! <b>")
+st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Craft** 👑. If you know you will **not** be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible!")
 
 
 
