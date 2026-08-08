@@ -391,16 +391,21 @@ if not base_sorted_leaderboard.empty:
         st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
 
     if last_game_date:
-        last_game_df = df_history[df_history["Date"] == last_game_date]
-        first_out_player = last_game_df.iloc[-1]["Player Name"]
-        first_out_position = last_game_df.iloc[-1]["Position"]
+        # BUG FIX: Filter using the smart datetime object instead of the raw string!
+        last_game_df = df_history[df_history["True_Date"] == last_game_date_raw]
         
-        with m_col4:
-            st.metric("First Out 🥶", first_out_player, f"Busted {first_out_position}th")
+        # Safety net: Only try to pull the last row if the dataframe isn't empty
+        if not last_game_df.empty:
+            first_out_player = last_game_df.iloc[-1]["Player Name"]
+            first_out_position = last_game_df.iloc[-1]["Position"]
+            with m_col4:
+                st.metric("First Out 🥶", first_out_player, f"Busted {first_out_position}th")
+        else:
+            with m_col4:
+                st.metric("First Out 🥶", "N/A", "Format Error")
     else:
         with m_col4:
             st.metric("First Out 🥶", "N/A", "Waiting for Game 1")
-
 # =========================================================================
 # 🏆 1. RESTORED ORIGINAL OVERALL SEASON RANKINGS LEADERBOARD
 # =========================================================================
