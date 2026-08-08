@@ -409,11 +409,10 @@ st.subheader("📋 Overall Season Rankings")
 display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
 display_leaderboard.index = display_leaderboard.index + 1
 
-display_leaderboard["Games Played Format"] = display_leaderboard["Games Played"].apply(lambda x: f"{int(x)} / {season_total_weeks}")
-
+# We removed the text-conversion string and now pass the raw integer column
 final_table_df = display_leaderboard[[
     "Player Name", "Total Points", "Last Game Points", 
-    "Games Played Format", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Games Played"
+    "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"
 ]]
 
 def highlight_last_game(val):
@@ -421,7 +420,7 @@ def highlight_last_game(val):
 
 def highlight_low_attendance(row):
     styles = [''] * len(row)
-    idx = row.index.get_loc("Games Played Format")
+    idx = row.index.get_loc("Games Played")
     attendance_threshold = 7 if season_total_weeks == 17 else 8
     if row["Games Played"] <= attendance_threshold:
         styles[idx] = 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;'
@@ -441,12 +440,12 @@ st.dataframe(
         "Player Name": st.column_config.TextColumn("♠️ Player"),
         "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
         "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
+        # The true data stays a number for perfect sorting, but formats visually on the screen!
+        "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", format=f"%d / {season_total_weeks}", alignment="center"),
         "🥇 1st": st.column_config.NumberColumn(alignment="center"),
         "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
         "🥉 3rd": st.column_config.NumberColumn(alignment="center"),
         "Final Tables": st.column_config.NumberColumn("🃏 FT", alignment="center"),
-        "Games Played Format": st.column_config.TextColumn("🏃‍♂️ Played", alignment="center"),
-        "Games Played": None
     }
 )
 
