@@ -241,6 +241,7 @@ if len(cleaned_rows) <= 1:
             
             high_hand_input = st.text_area("High Hand Elite Logs:", placeholder="Name - Details", key="empty_hh")
             wheel_spin_input = st.text_area("Ace of Spades Wheel Spins:", placeholder="Name - Prize", key="empty_ws")
+
             
             if st.button("🚀 Post Official Game Results to Google Sheets", key="empty_season_post_btn"):
                 if len(placements_data) == field_size:
@@ -292,8 +293,11 @@ if len(cleaned_rows) <= 1:
                     st.session_state["temporary_walk_ins"] = []
                     st.session_state["is_admin"] = False
                     st.rerun()
-                    except Exception as append_err:
+                          # THIS IS THE PART THAT WAS MISSING!
+                    except Exception as append_err: 
                         st.error(f"Failed to post data: {append_err}")
+                else:
+                    st.error("Error: Please make sure all placements are completely filled with no duplicate players.")
 
     # 🔄 HISTORICAL ARCHIVE NAVIGATOR FOR EMPTY SEASONS
     st.markdown("---")
