@@ -30,7 +30,7 @@ with st.sidebar:
     st.success("**Commissioner:**\nMichael Craft 👑")
     st.info("**Co-Commissioner:**\nTodd Kinsell 💼")
     st.markdown("---")
-    st.markdown("If you know you will **not** be able to attend this week's game, please notify Todd as early as possible so the field size can be adjusted!")
+    st.markdown("If you know you will **not** be able to attend this week's game, please notify Todd as early as possible!")
 
 # =========================================================================
 # 🗓️ EXPLICIT SEASON ROUTING (PREVENTS LOGICAL OVERLAP)
