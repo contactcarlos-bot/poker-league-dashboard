@@ -255,12 +255,43 @@ if len(cleaned_rows) <= 1:
                         row_values = [str(game_date_input), str(game_date_input), formatted_standings, high_hand_input.strip(), wheel_spin_input.strip()]
                         
                         # 3. Bug Fix: Safely append to the absolute bottom of the sheet
-                        sheet.append_row(row_values, value_input_option="USER_ENTERED")
-                        
-                        st.balloons()
-                        st.cache_data.clear()
-                        st.session_state["is_admin"] = False # Reset drawer for next time
-                        st.rerun()
+                    sheet = active_workbook.worksheet(TARGET_WORKSHEET)
+                    
+                    formatted_standings = "\n".join(placements_data)
+                    
+                    # 1. BULLETPROOF ROW FINDER: Scans the actual text, ignoring background colors
+                    all_rows = sheet.get_all_values()
+                    
+                    # Find the absolute last row that contains any actual text
+                    last_data_row = 1
+                    for row_index, row_data in enumerate(all_rows):
+                        if any(str(cell).strip() for cell in row_data):
+                            last_data_row = row_index + 1
+                            
+                    true_next_row = last_data_row + 1
+                    
+                    # 2. Ensure the sheet is physically tall enough (adds a row if you hit the bottom)
+                    if true_next_row > sheet.row_count:
+                        sheet.add_rows(1)
+                    
+                    # 3. Grab the exact 5 cells in the true next empty row
+                    cell_list = sheet.range(f"A{true_next_row}:E{true_next_row}")
+                    
+                    # 4. Inject the text directly into the cells
+                    cell_list[0].value = str(game_date_input)
+                    cell_list[1].value = str(game_date_input)
+                    cell_list[2].value = formatted_standings
+                    cell_list[3].value = high_hand_input.strip()
+                    cell_list[4].value = wheel_spin_input.strip()
+                    
+                    # 5. Save the exact cells to the sheet (bypasses formatting confusion)
+                    sheet.update_cells(cell_list, value_input_option="USER_ENTERED")
+                    
+                    st.balloons()
+                    st.cache_data.clear()
+                    st.session_state["temporary_walk_ins"] = []
+                    st.session_state["is_admin"] = False
+                    st.rerun()
                     except Exception as append_err:
                         st.error(f"Failed to post data: {append_err}")
 
@@ -627,15 +658,39 @@ with st.expander("⚙️ Secure League Admin Portal"):
                     sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                     
                     formatted_standings = "\n".join(placements_data)
-                    row_values = [str(game_date_input), str(game_date_input), formatted_standings, high_hand_input.strip(), wheel_spin_input.strip()]
                     
-                    # 3. Bug Fix: Safely append to the absolute bottom of the sheet
-                    sheet.append_row(row_values, value_input_option="USER_ENTERED")
+                    # 1. BULLETPROOF ROW FINDER: Scans the actual text, ignoring background colors
+                    all_rows = sheet.get_all_values()
+                    
+                    # Find the absolute last row that contains any actual text
+                    last_data_row = 1
+                    for row_index, row_data in enumerate(all_rows):
+                        if any(str(cell).strip() for cell in row_data):
+                            last_data_row = row_index + 1
+                            
+                    true_next_row = last_data_row + 1
+                    
+                    # 2. Ensure the sheet is physically tall enough (adds a row if you hit the bottom)
+                    if true_next_row > sheet.row_count:
+                        sheet.add_rows(1)
+                    
+                    # 3. Grab the exact 5 cells in the true next empty row
+                    cell_list = sheet.range(f"A{true_next_row}:E{true_next_row}")
+                    
+                    # 4. Inject the text directly into the cells
+                    cell_list[0].value = str(game_date_input)
+                    cell_list[1].value = str(game_date_input)
+                    cell_list[2].value = formatted_standings
+                    cell_list[3].value = high_hand_input.strip()
+                    cell_list[4].value = wheel_spin_input.strip()
+                    
+                    # 5. Save the exact cells to the sheet (bypasses formatting confusion)
+                    sheet.update_cells(cell_list, value_input_option="USER_ENTERED")
                     
                     st.balloons()
                     st.cache_data.clear()
                     st.session_state["temporary_walk_ins"] = []
-                    st.session_state["is_admin"] = False # Reset drawer for next time
+                    st.session_state["is_admin"] = False
                     st.rerun()
                 except Exception as append_err: st.error(f"Failed to post data: {append_err}")
             else:
