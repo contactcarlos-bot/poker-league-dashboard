@@ -362,7 +362,23 @@ base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=F
 if selected_season == "Season XLVII (Archived)":
     st.success("🃏 **SEASON XLVII COMPLETED:** 17 regular season games are in the archives.\n\n🏆 **Grand Champion:** Dustan Mulkey")
 elif selected_season == "Season XLVIII (Current)":
-    st.success(f"🃏 **SEASON XLVIII UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.")
+    if last_game_date:
+        # 1. Grab the actual day number (e.g., 8, 21, 31)
+        day = last_game_date_raw.day
+        
+        # 2. Determine the correct suffix (st, nd, rd, or th)
+        if 11 <= day <= 13:
+            suffix = "th"
+        else:
+            suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+            
+        # 3. Combine the abbreviated month, day, and suffix (e.g., "Aug 8th")
+        friendly_date = f"{last_game_date_raw.strftime('%b')} {day}{suffix}"
+        
+        # 4. The new "Current Through" phrasing
+        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** League data is officially current through Game {total_games_played} on {friendly_date}. Check the updated standings below.")
+    else:
+        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.")
 
 # =========================================================================
 # 📊 METRICS & SEASON GRIDS
