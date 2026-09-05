@@ -358,10 +358,14 @@ leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).asty
 leaderboard.columns = ["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"]
 base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
 
+
 # 🤖 BANNERS SELECTION USING THE GLOBAL SECURITY POOL VARIABLE KEYWAYS
 if selected_season == "Season XLVII (Archived)":
     st.success("🃏 **SEASON XLVII COMPLETED:** 17 regular season games are in the archives.\n\n🏆 **Grand Champion:** Dustan Mulkey")
 elif selected_season == "Season XLVIII (Current)":
+    # Automatically inherits 17 or 18 from season_total_weeks set at top of script
+    games_remaining = max(0, season_total_weeks - total_games_played)
+    
     if last_game_date:
         # 1. Grab the actual day number (e.g., 8, 21, 31)
         day = last_game_date_raw.day
@@ -376,9 +380,10 @@ elif selected_season == "Season XLVIII (Current)":
         friendly_date = f"{last_game_date_raw.strftime('%b')} {day}{suffix}"
         
         # 4. The new "Current Through" phrasing
-        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** League data is officially current through Game {total_games_played} on {friendly_date}. Check the updated standings below.")
+        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** League data is officially current through Game {total_games_played} on {friendly_date} ({games_remaining} games remaining). Check the updated standings below.")
     else:
-        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** Game {total_games_played} is officially in the books! Check the updated standings below.")
+        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** Game {total_games_played} is officially in the books! ({games_remaining} games remaining). Check the updated standings below.")
+
 
 # =========================================================================
 # 📊 METRICS & SEASON GRIDS
