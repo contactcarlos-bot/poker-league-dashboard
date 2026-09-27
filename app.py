@@ -527,6 +527,7 @@ if selected_season == "Season XLVII (Archived)":
         unsafe_allow_html=True
     )
     b_col1, b_col2 = st.columns(2)
+    
     with b_col1:
         st.success("""
         **🛰️ Saturday Satellite Match**
@@ -551,6 +552,17 @@ if selected_season == "Season XLVII (Archived)":
         """)
 elif selected_season == "Season XLVIII (Current)":
     b_col1, b_col2 = st.columns(2)
+
+    with b_col1:
+        st.success("""
+        **🛰️ Saturday Satellite Match**
+        * **Date Completed:** September 26, 2026 🏁
+        * **Winner:** **James Arndt** 🎫
+        * **Result:** Formally locked down TOC Seed #10
+        """)
+    
+    
+    
     with b_col1:
         st.info("""
         **🛰️ Upcoming Post-Season Satellite**
