@@ -559,19 +559,43 @@ elif selected_season == "Season XLVIII (Current)":
         * **Date Completed:** September 26, 2026 🏁
         * **Winner:** **James Arndt** 🎫
         * **Result:** Formally locked down TOC Seed #10
-        * **14 players:** Jeff McCleave, Carlos Recalde, Chris Martin, Chris Richerson, Scotty Cutright, Joe Hawkins, Ryan Mulkey, Travis Harvey, Mike Cercone, Jim Qualizza, Dustan Mulkey, Liora Volkovich, Jeff Farrar.
+        * **Final Standings (14 Players):**
+          1. James Arndt (Winner) 🎫
+          2. Jeff McCleave
+          3. Carlos Recalde
+          4. Chris Martin
+          5. Chris Richerson
+          6. Scotty Cutright
+          7. Joe Hawkins
+          8. Ryan Mulkey
+          9. Travis Harvey
+          10. Mike Cercone
+          11. Jim Qualizza
+          12. Dustan Mulkey
+          13. Liora Volkovich
+          14. Jeff Farrar
         """)
-        
-    
+
     with b_col2:
         st.info("""
         **👑 Tournament of Champions (TOC)**
         * **Date Scheduled:** Saturday, October 3, 2026 🏆
-        * **Timeline:** • Lunch Served: 12:15 PM 🍔
+        * **Timeline:**
+          • Lunch Served: 12:15 PM 🍔
           • Cards in the Air: 1:00 PM 🃏
-        * **Status:** Awaiting Qualified Field
-        * **Requirement:** Season Top 9 + Satellite Winner
+        * **Qualified Field (10 Players):**
+          1. Nick Rouhani
+          2. David Lee
+          3. Mike Craft
+          4. Quinton Staton
+          5. Bill Roland
+          6. Todd Kinsell
+          7. Steve Battard
+          8. John Alvenus
+          9. Brian Cox
+          10. James Arndt (Satellite Winner) 🎫
         """)
+
 
 # =========================================================================
 # ⚙️ LIVE DASHBOARD CONTROLS & REPORT FILTERS
