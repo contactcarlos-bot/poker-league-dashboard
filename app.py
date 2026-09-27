@@ -557,10 +557,8 @@ elif selected_season == "Season XLVIII (Current)":
         st.success("""
         **🛰️ Saturday Satellite Match**
         * **Date Completed:** September 26, 2026 🏁
-        * **Winner:** **James Arndt** 🎫
-        * **Result:** Formally locked down TOC Seed #10
         * **Final Standings (14 Players):**
-          1. James Arndt (Winner) 🎫
+          1. **James Arndt** (Winner) 🎫
           2. Jeff McCleave
           3. Carlos Recalde
           4. Chris Martin
