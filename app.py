@@ -559,18 +559,10 @@ elif selected_season == "Season XLVIII (Current)":
         * **Date Completed:** September 26, 2026 🏁
         * **Winner:** **James Arndt** 🎫
         * **Result:** Formally locked down TOC Seed #10
+        * ** 14 players: Jeff McCleave,Carlos Recalde,Chris Martin,Chris Richerson,Scotty Cutright,Joe Hawkins,Ryan Mulkey,Travis Harvey,Mike Cercone,Jim Qualizza,Dustan Mulkey,Liora Volkovich,Jeff Farrar.
         """)
+        
     
-    
-    
-    with b_col1:
-        st.info("""
-        **🛰️ Upcoming Post-Season Satellite**
-        * **Date Scheduled:** Saturday, September 26, 2026 📅
-        * **Time:** 4:00 PM EST ⏰
-        * **Status:** Open Qualifier Frame
-        * **Requirement:** 8+ season games played to qualify
-        """)
     with b_col2:
         st.info("""
         **👑 Tournament of Champions (TOC)**
