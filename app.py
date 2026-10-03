@@ -385,7 +385,7 @@ if not base_sorted_leaderboard.empty:
             first_out_player = last_game_df.iloc[-1]["Player Name"]
             first_out_position = last_game_df.iloc[-1]["Position"]
             with m_col4:
-                st.metric("First Out 🥶", first_out_player, f"Busted {first_out_position}th")
+                st.metric("First Out Last Game 🥶", first_out_player, f"Busted {first_out_position}th")
         else:
             with m_col4:
                 st.metric("First Out 🥶", "N/A", "Format Error")
