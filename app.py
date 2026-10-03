@@ -63,6 +63,9 @@ else:
     season_total_weeks = 17
     st.title("🏆 Dirty Town Poker League - Season XLVII")
 
+# 🚨 TOP BANNER ANNOUNCEMENT
+st.warning("⚠️ **REMINDER:** The Tournament of Champions (TOC) is **TODAY Oct. 3rd at 1:00 PM**! (Lunch served at 12:15 PM) 🃏🏆")
+
 # =========================================================================
 # 🎨 CUSTOM CSS: PRECISE METRIC FONT SCALING & LAYOUT DESIGN
 # =========================================================================
