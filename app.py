@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 import streamlit as st
 import pandas as pd
 import gspread
@@ -15,12 +16,26 @@ if "temporary_walk_ins" not in st.session_state:
     st.session_state["temporary_walk_ins"] = []
 
 if "active_season_choice" not in st.session_state:
-    st.session_state["active_season_choice"] = "Season XLVIII (Current)"
+    st.session_state["active_season_choice"] = "Season XLIX (Current)"
     
 if "is_admin" not in st.session_state:
     st.session_state["is_admin"] = False
 
 selected_season = st.session_state["active_season_choice"]
+
+# =========================================================================
+# 🏛️️ HELPER: AUTHENTICATE GSPREAD CLIENT
+# =========================================================================
+def get_gspread_client():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    if "gcp_service_account" in os.environ:
+        creds_dict = json.loads(os.environ["gcp_service_account"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    elif "gcp_service_account" in st.secrets:
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
+    else:
+        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    return gspread.authorize(creds)
 
 # =========================================================================
 # 👑 SIDEBAR: LEAGUE ADMIN & INFO
@@ -35,7 +50,11 @@ with st.sidebar:
 # =========================================================================
 # 🗓️ EXPLICIT SEASON ROUTING (PREVENTS LOGICAL OVERLAP)
 # =========================================================================
-if "Season XLVIII (Current)" == selected_season:
+if "Season XLIX" in selected_season:
+    TARGET_WORKSHEET = "Form Responses S49"
+    season_total_weeks = 17
+    st.title("🏆 Dirty Town Poker League - Season XLIX")
+elif "Season XLVIII" in selected_season:
     TARGET_WORKSHEET = "Form Responses S48"
     season_total_weeks = 17
     st.title("🏆 Dirty Town Poker League - Season XLVIII")
@@ -107,16 +126,7 @@ st.markdown(
 @st.cache_data(ttl=600)
 def load_player_registry():
     try:
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        if "gcp_service_account" in os.environ:
-            creds_dict = json.loads(os.environ["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        elif "gcp_service_account" in st.secrets:
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
-        else:
-            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-        
-        client = gspread.authorize(creds)
+        client = get_gspread_client()
         workbook = client.open("Dirty Town Poker League Input (Responses)")
         reg_sheet = workbook.worksheet("Registry")
         records = reg_sheet.get_all_records()
@@ -147,44 +157,26 @@ def calculate_poker_points(total_players, rank):
         29: [3035, 2402, 1944, 1608, 1352, 1164, 1014, 886, 775, 681, 600, 527, 459, 399, 346, 300, 263, 235, 211, 191, 178, 168, 157, 149, 141, 132, 124, 113, 100],
         30: [3137, 2500, 2035, 1692, 1427, 1231, 1076, 943, 828, 730, 645, 570, 500, 437, 380, 331, 289, 256, 230, 207, 189, 178, 167, 157, 149, 141, 133, 124, 113, 100]
     }
-    # Safely fetch the points array for the current field size (empty list if not found)
     points_array = LEAGUE_MATRIX.get(buy_ins, [])
-    
-    # If the rank exists within the array, return the specific points
     if 1 <= rank <= len(points_array):
         return points_array[rank - 1]
-        
-    # Fallback for small test games (<6 players), huge games (>30), or out-of-bounds ranks
     return 100
 
 @st.cache_data(ttl=600)
 def get_raw_form_responses(worksheet_name):
-    global global_workbook_instance
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    try:
-        if "gcp_service_account" in os.environ:
-            creds_dict = json.loads(os.environ["gcp_service_account"])
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        elif "gcp_service_account" in st.secrets:
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(dict(st.secrets["gcp_service_account"]), scope)
-        else:
-            creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-    except Exception:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-    
-    client = gspread.authorize(creds)
+    client = get_gspread_client()
     workbook = client.open("Dirty Town Poker League Input (Responses)")
-    global_workbook_instance = workbook  
     sheet = workbook.worksheet(worksheet_name)
     return sheet.get_all_values()
 
 # =========================================================================
-# 💾 DATA COMPILATION & PARSING ENGINE (REGULAR SEASON ONLY)
+# 💾 DATA COMPILATION & PARSING ENGINE
 # =========================================================================
 base_sorted_leaderboard = pd.DataFrame()
 leaderboard = pd.DataFrame()
 df_history = pd.DataFrame()
 last_game_date = None
+last_game_date_raw = None
 cleaned_rows = []
 
 try:
@@ -194,10 +186,9 @@ except Exception as data_load_error:
     st.error(f"Could not load sheets backend database engine: {data_load_error}")
     cleaned_rows = []
 
-# 🔒 GLOBAL VALUE LOCK ASSIGNMENT FOR SUCCESS BANNER RESOLUTIONS
 total_games_played = max(0, len(cleaned_rows) - 1)
 
-# 🛑 BRAND-NEW/EMPTY SEASONS CLEAN RECOVERY BLOCK
+# 🛑 EMPTY SEASONS RECOVERY BLOCK
 if len(cleaned_rows) <= 1:
     st.success(f"🃏 **{selected_season.split(' (')[0].upper()}:** Staged and ready for action. Shuffle up and deal! 🚀")      
     st.markdown("---")
@@ -206,16 +197,9 @@ if len(cleaned_rows) <= 1:
     st.markdown("---")
     st.subheader("🏁 Post-Season Championship Series Bracket")
     b_col1, b_col2 = st.columns(2)
-    b_col1.warning("""
-    **🛰️ Post-Season Satellite**
-    * **Status:** Staged for Future Season
-    """)
-    b_col2.warning("""
-    **👑 Tournament of Champions (TOC)**
-    * **Status:** Staged for Future Season
-    """)
+    b_col1.warning("**🛰️ Post-Season Satellite**\n* **Status:** Staged for Future Season")
+    b_col2.warning("**👑 Tournament of Champions (TOC)**\n* **Status:** Staged for Future Season")
 
-    # 🔐 INPUT ADMIN DRAWER AT FOR PRE-SEASON DEPLOYMENTS
     st.markdown("---")
     with st.expander("⚙️ Secure League Admin Portal"):
         admin_password = st.text_input("Enter Admin Password:", type="password", key="pre_season_admin_frame")
@@ -225,7 +209,7 @@ if len(cleaned_rows) <= 1:
         if st.session_state["is_admin"]:
             st.success("Access Verified.")
             st.markdown("#### 📋 Input Tonight's Game Ledger")
-            game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now(), key="empty_season_date")
+            game_date_input = st.date_input("Select Game Date:", value=datetime.date.today(), key="empty_season_date")
             field_size = st.number_input("Total Players:", min_value=2, max_value=30, value=18, key="empty_season_size")
             available_players = sorted(PLAYER_REGISTRY)
             
@@ -243,15 +227,12 @@ if len(cleaned_rows) <= 1:
             if st.button("🚀 Post Official Game Results to Google Sheets", key="empty_season_post_btn"):
                 if len(placements_data) == field_size:
                     try:
-                        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                        creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(os.environ["gcp_service_account"]), scope) if "gcp_service_account" in os.environ else ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-                        client = gspread.authorize(creds)
+                        client = get_gspread_client()
                         active_workbook = client.open("Dirty Town Poker League Input (Responses)")
                         sheet = active_workbook.worksheet(TARGET_WORKSHEET)
                         
                         formatted_standings = "\n".join(placements_data)
                         
-                        # 1. BULLETPROOF ROW FINDER
                         all_rows = sheet.get_all_values()
                         last_data_row = 1
                         for row_index, row_data in enumerate(all_rows):
@@ -259,7 +240,6 @@ if len(cleaned_rows) <= 1:
                                 last_data_row = row_index + 1
                                 
                         true_next_row = last_data_row + 1
-                        
                         if true_next_row > sheet.row_count:
                             sheet.add_rows(1)
                         
@@ -279,16 +259,10 @@ if len(cleaned_rows) <= 1:
                     except Exception as append_err:
                         st.error(f"Failed to post data: {append_err}")
 
-    # 🔄 HISTORICAL ARCHIVE NAVIGATOR FOR EMPTY SEASONS
     st.markdown("---")
     st.markdown("### 🗂️ League History Archive")
-    season_options = ["Season XLVIII (Current)", "Season XLVII (Archived)"]
-    season_toggle = st.selectbox(
-        "🍂 Toggle Active League Season Dashboard View:",
-        season_options,
-        index=0,
-        key="empty_season_toggle_nav"
-    )
+    season_options = ["Season XLIX (Current)", "Season XLVIII (Archived)", "Season XLVII (Archived)"]
+    season_toggle = st.selectbox("🍂 Toggle Active League Season Dashboard View:", season_options, index=season_options.index(selected_season), key="empty_season_toggle_nav")
     if season_toggle != selected_season:
         st.session_state["active_season_choice"] = season_toggle
         st.rerun()
@@ -296,7 +270,7 @@ if len(cleaned_rows) <= 1:
     st.stop()
 
 # =========================================================================
-# 📈 DATA COMPILATION & PARSING (RUNS ONLY IF LIVE ROWS EXIST IN ACTIVE SHEET)
+# 📈 DATA PARSING
 # =========================================================================
 parsed_history_records = []
 for row in cleaned_rows[1:]:
@@ -358,32 +332,25 @@ leaderboard["Last Game Points"] = leaderboard["Last Game Points"].fillna(0).asty
 leaderboard.columns = ["Player Name", "Total Points", "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables", "Avg Points/Game", "Last Game Points"]
 base_sorted_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
 
-
-# 🤖 BANNERS SELECTION USING THE GLOBAL SECURITY POOL VARIABLE KEYWAYS
+# 🤖 BANNER DISPLAY
 if selected_season == "Season XLVII (Archived)":
     st.success("🃏 **SEASON XLVII COMPLETED:** 17 regular season games are in the archives.\n\n🏆 **Grand Champion:** Dustan Mulkey")
-elif selected_season == "Season XLVIII (Current)":
-    # Automatically inherits 17 or 18 from season_total_weeks set at top of script
+elif "Season XLVIII" in selected_season:
+    st.success("🃏 **SEASON XLVIII COMPLETED:** Regular season completed.\n\n🏆 **TOC Date:** Saturday, October 3, 2026")
+elif "Season XLIX" in selected_season:
     games_remaining = max(0, season_total_weeks - total_games_played)
     
-    if last_game_date:
-        # 1. Grab the actual day number (e.g., 8, 21, 31)
+    if last_game_date and last_game_date_raw is not None:
         day = last_game_date_raw.day
-        
-        # 2. Determine the correct suffix (st, nd, rd, or th)
         if 11 <= day <= 13:
             suffix = "th"
         else:
             suffix = {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
             
-        # 3. Combine the abbreviated month, day, and suffix (e.g., "Aug 8th")
         friendly_date = f"{last_game_date_raw.strftime('%b')} {day}{suffix}"
-        
-        # 4. The new "Current Through" phrasing
-        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** League data is officially current through Game {total_games_played} on {friendly_date} ({games_remaining} games remaining). Check the updated standings below.")
+        st.success(f"🃏 **SEASON XLIX UNDERWAY:** League data is officially current through Game {total_games_played} on {friendly_date} ({games_remaining} games remaining). Check the updated standings below.")
     else:
-        st.success(f"🃏 **SEASON XLVIII UNDERWAY:** Game {total_games_played} is officially in the books! ({games_remaining} games remaining). Check the updated standings below.")
-
+        st.success(f"🃏 **SEASON XLIX UNDERWAY:** Game {total_games_played} is officially in the books! ({games_remaining} games remaining). Check the updated standings below.")
 
 # =========================================================================
 # 📊 METRICS & SEASON GRIDS
@@ -404,18 +371,13 @@ if not base_sorted_leaderboard.empty:
     
     with m_col1:
         st.metric("League Leader 🥇", current_leader, f"{base_sorted_leaderboard.iloc[0]['Total Points']} pts")
-        
     with m_col2:
         st.metric("Championship Wins 🏆", win_boss, f"{win_count} Wins")
-        
     with m_col3:
         st.metric("Final Table Boss 🃏", ft_boss, f"{ft_count} FTs")
 
-    if last_game_date:
-        # BUG FIX: Filter using the smart datetime object instead of the raw string!
+    if last_game_date and last_game_date_raw is not None:
         last_game_df = df_history[df_history["True_Date"] == last_game_date_raw]
-        
-        # Safety net: Only try to pull the last row if the dataframe isn't empty
         if not last_game_df.empty:
             first_out_player = last_game_df.iloc[-1]["Player Name"]
             first_out_position = last_game_df.iloc[-1]["Position"]
@@ -427,15 +389,15 @@ if not base_sorted_leaderboard.empty:
     else:
         with m_col4:
             st.metric("First Out 🥶", "N/A", "Waiting for Game 1")
+
 # =========================================================================
-# 🏆 1. RESTORED ORIGINAL OVERALL SEASON RANKINGS LEADERBOARD
+# 🏆 OVERALL SEASON RANKINGS LEADERBOARD
 # =========================================================================
 st.markdown("---")
 st.subheader("📋 Overall Season Rankings")
 display_leaderboard = leaderboard.sort_values(by="Total Points", ascending=False).reset_index(drop=True)
 display_leaderboard.index = display_leaderboard.index + 1
 
-# We removed the text-conversion string and now pass the raw integer column
 final_table_df = display_leaderboard[[
     "Player Name", "Total Points", "Last Game Points", 
     "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"
@@ -466,7 +428,6 @@ st.dataframe(
         "Player Name": st.column_config.TextColumn("♠️ Player"),
         "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
         "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
-        # The true data stays a number for perfect sorting, but formats visually on the screen!
         "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", format=f"%d / {season_total_weeks}", alignment="center"),
         "🥇 1st": st.column_config.NumberColumn(alignment="center"),
         "🥈 2nd": st.column_config.NumberColumn(alignment="center"),
@@ -509,7 +470,7 @@ if len(cleaned_rows) > 1:
                     st.dataframe(pd.DataFrame(spin_wheel_records).sort_values(by="Date", ascending=False), use_container_width=True, hide_index=True)
 
 # =========================================================================
-# 🏅 POST-SEASON BRACKETS SYSTEM (ALL NAMES INCLUDED)
+# 🏅 POST-SEASON BRACKETS SYSTEM
 # =========================================================================
 st.markdown("---")
 st.subheader("🏁 Post-Season Championship Series Bracket")
@@ -527,7 +488,6 @@ if selected_season == "Season XLVII (Archived)":
         unsafe_allow_html=True
     )
     b_col1, b_col2 = st.columns(2)
-    
     with b_col1:
         st.success("""
         **🛰️ Saturday Satellite Match**
@@ -550,30 +510,18 @@ if selected_season == "Season XLVII (Archived)":
         * **9th Place:** Jim Qualizza
         * **10th Place:** David Lee
         """)
-elif selected_season == "Season XLVIII (Current)":
+elif "Season XLVIII" in selected_season:
     b_col1, b_col2 = st.columns(2)
 
     with b_col1:
         st.success("""
         **🛰️ Saturday Satellite Match**
         * **Date Completed:** September 26, 2026 🏁
-        * **Final Standings (14 Players):**
-          1. **James Arndt** (Winner) 🎫
-          2. Jeff McCleave
-          3. Carlos Recalde
-          4. Chris Martin
-          5. Chris Richerson
-          6. Scotty Cutright
-          7. Joe Hawkins
-          8. Ryan Mulkey
-          9. Travis Harvey
-          10. Mike Cercone
-          11. Jim Qualizza
-          12. Dustan Mulkey
-          13. Liora Volkovich
-          14. Jeff Farrar
+        * **Winner:** **James Arndt** 🎫
+        * **Result:** Formally locked down TOC Seed #10
+        * **14 players:** Jeff McCleave, Carlos Recalde, Chris Martin, Chris Richerson, Scotty Cutright, Joe Hawkins, Ryan Mulkey, Travis Harvey, Mike Cercone, Jim Qualizza, Dustan Mulkey, Liora Volkovich, Jeff Farrar.
         """)
-
+        
     with b_col2:
         st.info("""
         **👑 Tournament of Champions (TOC)**
@@ -593,7 +541,10 @@ elif selected_season == "Season XLVIII (Current)":
           9. Brian Cox
           10. James Arndt (Satellite Winner) 🎫
         """)
-
+elif "Season XLIX" in selected_season:
+    b_col1, b_col2 = st.columns(2)
+    b_col1.info("**🛰️ Saturday Satellite Match**\n* **Status:** Scheduled for end of Season XLIX")
+    b_col2.info("**👑 Tournament of Champions (TOC)**\n* **Status:** Scheduled for end of Season XLIX")
 
 # =========================================================================
 # ⚙️ LIVE DASHBOARD CONTROLS & REPORT FILTERS
@@ -615,7 +566,7 @@ if not df_history.empty and last_game_date:
             st.dataframe(df_history.sort_values(by=["Date", "Position"], ascending=[False, True])[["Date", "Player Name", "Position", "Points"]], width="stretch", hide_index=True)
 
 # -----------------------------------------------------------------
-# 📉 CHARTING PANELS (🔓 UNLOCKED FOR ALL LOGGED TIMELINES)
+# 📉 CHARTING PANELS
 # -----------------------------------------------------------------
 if not df_history.empty and not leaderboard.empty:
     st.markdown("---")
@@ -653,7 +604,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
         
         st.markdown("---")
         st.markdown("#### 📋 Input Tonight's Game Ledger")
-        game_date_input = st.date_input("Select Game Date:", value=pd.Timestamp.now(), key="active_panel_date")
+        game_date_input = st.date_input("Select Game Date:", value=datetime.date.today(), key="active_panel_date")
         field_size = st.number_input("Total Players:", min_value=2, max_value=30, value=18, key="active_panel_size")
         available_players = sorted(PLAYER_REGISTRY + st.session_state["temporary_walk_ins"])
         
@@ -670,9 +621,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
         if st.button("🚀 Post Official Game Results to Google Sheets", key="active_panel_post_btn"):
             if len(placements_data) == field_size and len(set(placements_data)) == field_size:
                 try:
-                    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                    creds = ServiceAccountCredentials.from_json_keyfile_dict(json.loads(os.environ["gcp_service_account"]), scope) if "gcp_service_account" in os.environ else ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-                    client = gspread.authorize(creds)
+                    client = get_gspread_client()
                     active_workbook = client.open("Dirty Town Poker League Input (Responses)")
                     reg_sheet = active_workbook.worksheet("Registry")
                     for name in placements_data:
@@ -680,35 +629,25 @@ with st.expander("⚙️ Secure League Admin Portal"):
                             reg_sheet.append_row([name])
                             
                     sheet = active_workbook.worksheet(TARGET_WORKSHEET)
-                    
                     formatted_standings = "\n".join(placements_data)
                     
-                    # 1. BULLETPROOF ROW FINDER: Scans the actual text, ignoring background colors
                     all_rows = sheet.get_all_values()
-                    
-                    # Find the absolute last row that contains any actual text
                     last_data_row = 1
                     for row_index, row_data in enumerate(all_rows):
                         if any(str(cell).strip() for cell in row_data):
                             last_data_row = row_index + 1
                             
                     true_next_row = last_data_row + 1
-                    
-                    # 2. Ensure the sheet is physically tall enough
                     if true_next_row > sheet.row_count:
                         sheet.add_rows(1)
                     
-                    # 3. Grab the exact 5 cells in the true next empty row
                     cell_list = sheet.range(f"A{true_next_row}:E{true_next_row}")
-                    
-                    # 4. Inject the text directly into the cells
                     cell_list[0].value = str(game_date_input)
                     cell_list[1].value = str(game_date_input)
                     cell_list[2].value = formatted_standings
                     cell_list[3].value = high_hand_input.strip()
                     cell_list[4].value = wheel_spin_input.strip()
                     
-                    # 5. Save the exact cells to the sheet
                     sheet.update_cells(cell_list, value_input_option="USER_ENTERED")
                     
                     st.balloons()
@@ -725,8 +664,8 @@ with st.expander("⚙️ Secure League Admin Portal"):
 # 🔄 LEAGUE HISTORY ARCHIVE NAVIGATION
 # =========================================================================
 st.markdown("---")
-st.markdown("### 🗂️ League History Archive")
-season_options = ["Season XLVIII (Current)", "Season XLVII (Archived)"]
+st.markdown("### 🗂️️ League History Archive")
+season_options = ["Season XLIX (Current)", "Season XLVIII (Archived)", "Season XLVII (Archived)"]
 season_toggle = st.selectbox(
     "🍂 Toggle Active League Season Dashboard View:",
     season_options,
@@ -740,6 +679,3 @@ if season_toggle != selected_season:
     
 st.markdown("---")
 st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Craft** 👑. If you know you will **not** be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible!")
-
-
-
