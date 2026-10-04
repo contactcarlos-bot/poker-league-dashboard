@@ -10,6 +10,11 @@ import altair as alt
 st.set_page_config(page_title="Dirty Town Poker League", page_icon="🏆", layout="centered")
 
 # =========================================================================
+# 👑 DEFENDING TOC CHAMPION CONFIGURATION
+# =========================================================================
+DEFENDING_TOC_CHAMP = "Steve Battard"
+
+# =========================================================================
 # 🔄 GLOBAL SESSION STATE & VARIABLE RESETS
 # =========================================================================
 if "temporary_walk_ins" not in st.session_state:
@@ -405,31 +410,40 @@ display_leaderboard.index = display_leaderboard.index + 1
 final_table_df = display_leaderboard[[
     "Player Name", "Total Points", "Last Game Points", 
     "Games Played", "🥇 1st", "🥈 2nd", "🥉 3rd", "Final Tables"
-]]
+]].copy()
+
+# 👑 OPTIONAL CROWN EMOJI FOR DEFENDING TOC CHAMPION IN SEASON XLIX
+if "Season XLIX" in selected_season:
+    final_table_df["Player Name"] = final_table_df["Player Name"].apply(
+        lambda x: f"{x} 👑" if x == DEFENDING_TOC_CHAMP else x
+    )
 
 def highlight_last_game(val):
     return 'background-color: rgba(46, 204, 113, 0.15); font-weight: bold;' if val > 0 else ''
 
-def highlight_low_attendance(row):
+def style_leaderboard_rows(row):
     styles = [''] * len(row)
-    idx = row.index.get_loc("Games Played")
+    
+    # 1. Attendance Threshold Highlight (Low Attendance Warning)
+    idx_played = row.index.get_loc("Games Played")
     attendance_threshold = 7 if season_total_weeks == 17 else 8
     if row["Games Played"] <= attendance_threshold:
-        styles[idx] = 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;'
+        styles[idx_played] = 'background-color: rgba(231, 76, 60, 0.18); font-weight: bold; color: #ff7675;'
     else:
-        styles[idx] = 'background-color: rgba(46, 204, 113, 0.12); font-weight: bold; color: #2ed573;'
+        styles[idx_played] = 'background-color: rgba(46, 204, 113, 0.12); font-weight: bold; color: #2ed573;'
+
     return styles
 
 styled_df = final_table_df.style\
     .map(highlight_last_game, subset=["Last Game Points"])\
-    .apply(highlight_low_attendance, axis=1)
+    .apply(style_leaderboard_rows, axis=1)
 
 st.dataframe(
     styled_df, 
     use_container_width=True,
     hide_index=False,
     column_config={
-        "Player Name": st.column_config.TextColumn("♠️ Player"),
+        "Player Name": st.column_config.TextColumn("♠️️ Player"),
         "Total Points": st.column_config.NumberColumn("🔥 Total Points", format="%d pts"),
         "Last Game Points": st.column_config.NumberColumn("💥 Last Game", format="+%d"),
         "Games Played": st.column_config.NumberColumn("🏃‍♂️ Played", format=f"%d / {season_total_weeks}", alignment="center"),
@@ -530,7 +544,7 @@ elif "Season XLVIII" in selected_season:
 
     with b_col1:
         st.success("""
-        **🛰️️ Saturday Satellite Match**
+        **🛰 Saturday Satellite Match**
         * **Date Completed:** September 26, 2026 🏁
         * **Winner:** **James Arndt** 🎫
         * **Result:** Formally locked down TOC Seed #10
@@ -604,7 +618,7 @@ with st.expander("⚙️ Secure League Admin Portal"):
         
     if st.session_state["is_admin"]:
         st.success("Access Verified.")
-        st.markdown("#### 🏃‍♂️ Quick-Add New Surprise Player")
+        st.markdown("#### 🏃‍♂️️ Quick-Add New Surprise Player")
         new_guest_name = st.text_input("Type Full Name of New Player:", key="active_panel_guest_box")
         if st.button("➕ Add Player To Tonight's Dropdowns", key="active_panel_guest_btn"):
             if new_guest_name.strip():
