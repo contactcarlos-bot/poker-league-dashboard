@@ -51,6 +51,7 @@ with st.sidebar:
     st.info("**Co-Commissioner:**\nTodd Kinsell 💼")
     st.markdown("---")
     st.markdown("If you know you will **not** be able to attend this week's game, please notify Todd as early as possible!")
+    st.markdown("Please note: The Game on Friday, December 25th is Canceled.")
 
 # =========================================================================
 # 🗓️ EXPLICIT SEASON ROUTING (PREVENTS LOGICAL OVERLAP)
