@@ -568,7 +568,7 @@ elif "Season XLVIII" in selected_season:
         """)
 elif "Season XLIX" in selected_season:
     b_col1, b_col2 = st.columns(2)
-    b_col1.info("**🛰️ Saturday Satellite Match**\n* **Scheduled for Saturday, January 30, 2027 at 4:00pm**")
+    b_col1.info("**🛰️ Satellite Match**\n* **Scheduled for Saturday, January 30, 2027 at 4:00pm**\n* Need to play 8 Games to Qualify for the Satellite")
     b_col2.info("**👑 Tournament of Champions (TOC)**\n* **Scheduled for Saturday, February 6, 2027 at 4:00pm**")
 
 # =========================================================================
