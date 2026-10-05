@@ -704,4 +704,4 @@ if season_toggle != selected_season:
     st.rerun()
     
 st.markdown("---")
-st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Craft** 👑. If you know you will **not** be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! \n* Please note: The Game on Friday, December 25th is **Canceled.**")
+st.info("📋 **League Notice:** For schedule changes, blind structure, or dispute resolution, please contact your League Commissioner: **Michael Craft** 👑. If you know you will **not** be able to attend this week's game, please notify Co-Commissioner **Todd Kinsell** 💼 as early as possible! Please note: The Game on Friday, December 25th is **Canceled.**")
